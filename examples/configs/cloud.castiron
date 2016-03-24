@@ -1,0 +1,13 @@
+import castiron.actions.ssh_generate_key
+import castiron.actions.system_packages
+import castiron.actions.python_packages
+
+castiron.actions.system_packages.add_packages(
+    'vim',
+    'build-essential',
+    'ctags',
+)
+
+castiron.actions.python_packages.add_packages(
+    'pyinstaller',
+)
