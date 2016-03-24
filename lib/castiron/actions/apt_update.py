@@ -1,5 +1,5 @@
 from castiron.tools import Action
-import castiron.actions.system.require_debian
+import castiron.actions.apt_require
 
 import os
 import time

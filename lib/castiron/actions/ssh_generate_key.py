@@ -1,5 +1,5 @@
 from castiron.tools import Action
-from castiron.actions.ssh.create_directory import SSH_DIR
+from castiron.actions.ssh_initialize import SSH_DIR
 
 import os
 
