@@ -1,30 +1,49 @@
-from castiron.tools import Action
+from castiron.tools import Action, register_actions
 import castiron.actions.system_packages
+
+castiron.actions.system_packages.add_packages('git')
 
 import os
 import re
 
-castiron.actions.system_packages.add_packages('git')
-
-REPO_BASE_DIR = os.path.expanduser('~/src')
-REPO_URLS = []
-RE_PARSE_URL = re.compile('^.*/([^/]+)\.git$')
+class G:
+    repo_base_dir = os.path.expanduser('~/src')
+    all_repo_urls = []
+    parse_url_re = re.compile('^.*/([^/]+)\.git$')
 
 def add_repo_urls(*repo_urls):
-    for repo_url in repo_urls:
-        m = RE_PARSE_URL.match(repo_url)
-        if not m:
-            raise Exception('Bad Git repository URL: %s' % repo_url)
-        path = os.path.join(REPO_BASE_DIR, m.group(1))
-        if os.path.exists(path):
-            print('Skipping Git clone over existing location: %s' % path)
-        else:
-            REPO_URLS.append(repo_url)
+    G.all_repo_urls.extend(repo_urls)
 
-@Action('create Git local repositories')
-def implementation(runner):
-    if not os.path.exists(REPO_BASE_DIR):
-        os.mkdir(REPO_BASE_DIR)
-    os.chdir(REPO_BASE_DIR)
-    for repo_url in REPO_URLS:
-        runner.run_command('git clone %s' % repo_url)
+class GitCloneAction(Action):
+
+    description = 'create Git local repositories'
+    enabled = True
+
+    def __init__(self):
+        super(GitCloneAction, self).__init__()
+        self.clone_urls = None
+        self.skip = None
+
+    def check(self, runner):
+        self.clone_urls = []
+        self.skip = {}
+        for url in G.all_repo_urls:
+            dir_name = os.path.splitext(os.path.basename(url.split(':')[-1]))[0]
+            if os.path.exists(os.path.join(G.repo_base_dir, dir_name)):
+                self.skip[dir_name] = url
+            else:
+                self.clone_urls.append(url)
+        return bool(self.clone_urls)
+
+    def perform(self, runner, needed):
+        if not os.path.exists(G.repo_base_dir):
+            os.makedirs(G.repo_base_dir)
+        if self.skip:
+            print('Skipping Git repositories that seem to be present:')
+            for dir_name in sorted(self.skip.keys()):
+                print('  %s (%s)' % (dir_name, self.skip[dir_name]))
+        with runner.chdir(G.repo_base_dir):
+            for repo_url in self.clone_urls:
+                runner.run_command('git clone %s' % repo_url)
+
+register_actions(GitCloneAction)

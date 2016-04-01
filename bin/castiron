@@ -21,9 +21,14 @@ add_castiron_lib_to_sys_path()
 
 from castiron import tools
 
-def main(runner):
-    for function in tools.functions:
-        function(runner)
+def main(config_path, dry_run=False, ignore_checks=False):
+    options = tools.Options(dry_run=dry_run, ignore_checks=ignore_checks)
+    execfile(config_path)
+    try:
+        tools.perform_actions(options)
+    except tools.ActionException, e:
+        sys.stderr.write('Action error: %s\n' % str(e))
+        sys.exit(255)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -31,15 +36,11 @@ if __name__ == '__main__':
     parser.add_argument('config_path', type=str, help='.castiron configuration file path')
     parser.add_argument('-n', '--dry-run', action='store_true', dest='dry_run',
                         help='display actions without executing them')
+    parser.add_argument('-i', '--ignore-checks', action='store_true', dest='ignore_checks',
+                        help='perform all actions whether or not they are needed')
     args = parser.parse_args()
-    options = tools.Options(dry_run=args.dry_run)
-    execfile(args.config_path)
-    runner = tools.Runner(options)
     try:
-        main(runner)
+        main(args.config_path, dry_run=args.dry_run, ignore_checks=args.ignore_checks)
     except KeyboardInterrupt:
         sys.stderr.write('\n<interrupted>\n')
-        sys.exit(255)
-    except Exception, e:
-        sys.stderr.write('Action error: %s: %s\n' % (e.__class__.__name__, str(e)))
         sys.exit(255)
