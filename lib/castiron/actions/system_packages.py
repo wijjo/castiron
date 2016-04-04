@@ -1,20 +1,24 @@
-from castiron.tools import Action, register_actions
+from castiron.tools import castiron_bundle
+
 import castiron.actions.apt_update
 
 class G:
     packages = []
 
-def add_packages(*packages):
+def add(*packages):
     G.packages.extend(packages)
 
-class SystemPackagesAction(Action):
+class SystemPackagesAction(object):
 
-    description = 'install packages: base'
+    def __init__(self, packages):
+        self.packages = packages
 
     def check(self, runner):
-        return bool(G.packages)
+        return bool(self.packages)
 
-    def perform(self, runner, needed):
-        runner.run_command('sudo apt-get install %s' % ' '.join(G.packages))
+    def perform(self, runner):
+        runner.run_command('sudo apt-get install %s' % ' '.join(self.packages))
 
-register_actions(SystemPackagesAction)
+@castiron_bundle('system-packages', 'System: install packages')
+def _initialize(runner):
+    yield SystemPackagesAction(G.packages)

@@ -1,17 +1,25 @@
-from castiron.tools import Action, register_actions
+from castiron.tools import castiron_bundle
 
 import os
 
-SSH_DIR = os.path.expanduser('~/.ssh')
+class G:
+    ssh_dir = os.path.expanduser('~/.ssh')
 
-class SSHInitializeAction(Action):
+def config_path(path):
+    return os.path.join(G.ssh_dir, path)
 
-    description = 'SSH: create directory'
+class SSHInitializeAction(object):
+
+    def __init__(self, ssh_dir):
+        self.ssh_dir = ssh_dir
 
     def check(self, runner):
-        return not os.path.exists(SSH_DIR)
+        return not os.path.exists(self.ssh_dir)
 
-    def perform(self, runner, needed):
-        runner.create_directory(SSH_DIR, permissions=0700)
+    def perform(self, runner):
+        # Create directory and or change the permissions, as appropriate.
+        runner.create_directory(self.ssh_dir, permissions=0700)
 
-register_actions(SSHInitializeAction)
+@castiron_bundle('ssh-initialize', 'SSH: initialize user')
+def _initialize(runner):
+    yield SSHInitializeAction(G.ssh_dir)

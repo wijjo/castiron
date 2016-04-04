@@ -1,23 +1,30 @@
-from castiron.tools import Action, register_actions
+from castiron.tools import castiron_bundle
+
+# Dependencies
 import castiron.actions.apt_require
 
 import os
 import time
 
-class AptUpdateAction(Action):
+# Globals
+class G:
+    # Minimum number of seconds between apt updates.
+    update_interval_secs = 7200
+    path_for_timestamp = '/var/cache/apt'
 
-    description = 'update and upgrade installed packages'
-    enabled = True
-
-    update_interval = 7200
+class AptUpgradeAction(object):
 
     def check(self, runner):
-        now_time = time.time()
-        apt_time = os.path.getmtime('/var/cache/apt') if os.path.exists('/var/cache/apt') else 0
-        return int(apt_time) / self.update_interval < int(now_time) / self.update_interval
+        # Give the go-ahead if either it would be the first update or no update has happened
+        # within the current time interval.
+        return (   not os.path.exists(G.path_for_timestamp)
+                or (  int(time.time()) / G.update_interval_secs
+                    > int(os.path.getmtime(G.path_for_timestamp)) / G.update_interval_secs))
 
-    def perform(self, runner, needed):
+    def perform(self, runner):
         runner.run_command('sudo apt-get update')
         runner.run_command('sudo apt-get upgrade')
 
-register_actions(AptUpdateAction)
+@castiron_bundle('apt-upgrade', 'APT: update and upgrade installed packages')
+def _initialize(runner):
+    yield AptUpgradeAction()

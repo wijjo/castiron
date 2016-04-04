@@ -1,18 +1,26 @@
-from castiron.tools import Action, register_actions
+from castiron.tools import castiron_bundle
+
 import castiron.actions.system_packages
 
 class G:
     all_packages = []
 
-def add_packages(*packages):
+def add(*packages):
     G.all_packages.extend(packages)
 
-class PythonPackagesAction(Action):
+class PythonPackagesAction(object):
 
     description = 'install packages: Python'
 
-    def perform(self, runner, needed):
-        if G.all_packages:
-            runner.run_command('sudo pip install %s' % ' '.join(G.all_packages))
+    def __init__(self, packages):
+        self.packages = packages
 
-register_actions(PythonPackagesAction)
+    def check(self, runner):
+        return bool(self.packages)
+
+    def perform(self, runner):
+        runner.run_command('sudo pip install %s' % ' '.join(self.packages))
+
+@castiron_bundle('python-packages', 'Python: install packages')
+def _initialize(runner):
+    yield PythonPackagesAction(G.all_packages)

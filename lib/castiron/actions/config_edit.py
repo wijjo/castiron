@@ -1,10 +1,13 @@
-from castiron.tools import Action, register_actions
+from castiron.tools import castiron_bundle
 
 import os
 import re
 
 class G:
     all_edits = []
+
+def add(*edits):
+    G.all_edits.extend(edits)
 
 def _file_contains_re(runner, path, contains_re):
     real_path = os.path.realpath(os.path.expanduser(path))
@@ -28,9 +31,10 @@ class EditBase(object):
         self.path = path
 
 class Inject(EditBase):
-    '''
-    Append to existing file or create new file.
-    '''
+
+    # Don't re-inject the text if it's already there.
+    destructive = True
+
     def __init__(self, path, skip_if, text):
         '''
         path is the file to edit or create.
@@ -38,45 +42,16 @@ class Inject(EditBase):
         skip_if skips the edit when a line matches a regex pattern.
         '''
         super(Inject, self).__init__(path)
+        self.description = 'Config: inject text into file: %s' % self.path
         self.skip_if_re = re.compile(skip_if)
         self.text = text
-        self.needed = False
 
     def check(self, runner):
         return _file_contains_re(runner, self.path, self.skip_if_re)
 
     def perform(self, runner):
-        if _file_contains_re(runner, self.path, self.skip_if_re):
-            _append_text(runner, self.path, self.text)
+        _append_text(runner, self.path, self.text)
 
-def edits(*edits):
-    G.all_edits.extend(edits)
-
-class ConfigEditAction(Action):
-
-    description = 'edit configuration files'
-    enabled = True
-
-    def __init__(self):
-        super(ConfigEditAction, self).__init__()
-        class CheckedEdit(object):
-            def __init__(self, edit):
-                self.edit = edit
-                self.needed = False
-        self.checked_edits = [CheckedEdit(edit) for edit in G.all_edits]
-
-    def check(self, runner):
-        okay = False
-        for checked_edit in self.checked_edits:
-            if runner.call(checked_edit.edit.check):
-                okay = checked_edit.needed = True
-        return okay
-
-    def perform(self, runner, needed):
-        for checked_edit in self.checked_edits:
-            if checked_edit.needed:
-                runner.call(checked_edit.edit.perform)
-            else:
-                print 'Configuration file was already changed: %s' % checked_edit.edit.path
-
-register_actions(ConfigEditAction)
+@castiron_bundle('config-edit', 'Config: edit files')
+def _initialize(options):
+    return G.all_edits
