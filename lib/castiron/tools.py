@@ -2,21 +2,25 @@ import sys
 import os
 
 class G:
-    bundles = []
+    features = []
 
-class Bundle(object):
+class Feature(object):
     def __init__(self, name, description, initializer):
         self.name = name
         self.description = description
         self.initializer = initializer
         self.actions = None
     def initialize(self, runner):
-        runner.info('Bundle[%s] initialize: %s' % (self.name, self.description))
-        self.actions = [action for action in self.initializer(runner)]
-    def perform(self, runner):
+        runner.info('Feature[%s] initialize: %s' % (self.name, self.description))
+        actions = self.initializer(runner)
+        if actions:
+            self.actions = [action for action in actions if action]
+    def execute_actions(self, runner):
         badge = runner.options.dry_run_badge()
-        runner.info('Bundle[%s]%s: %s' % (self.name, badge, self.description))
+        runner.info('Feature[%s]%s: %s' % (self.name, badge, self.description))
         action_number = 0
+        if not self.actions:
+            return
         for action in self.actions:
             action_number += 1
             needed = action.check(runner)
@@ -25,20 +29,20 @@ class Bundle(object):
                 if not needed and getattr(action, 'destructive', False):
                     runner.info('Action[%s-%d] skip destructive%s: %s' % (self.name, action_number, badge, description))
                 else:
-                    runner.info('Action[%s-%d] perform%s: %s' % (self.name, action_number, badge, description))
+                    runner.info('Action[%s-%d] execute%s: %s' % (self.name, action_number, badge, description))
                 if not runner.options.dry_run:
-                    action.perform(runner)
+                    action.execute(runner)
 
-class castiron_bundle(object):
+class castiron_feature(object):
     '''
-    @castiron_bundle(name, description)
-    decorator for registering action bundle initializers
+    @castiron_feature(name, description)
+    decorator for registering feature initializers
     '''
     def __init__(self, name, description):
         self.name = name
         self.description = description
     def __call__(self, initializer):
-        G.bundles.append(Bundle(self.name, self.description, initializer))
+        G.features.append(Feature(self.name, self.description, initializer))
         return initializer
 
 class Options(object):
@@ -71,7 +75,8 @@ class Runner(object):
     def error(self, message):
         sys.stderr.write('ERROR: %s\n' % message)
 
-    def create_directory(self, directory, permissions=None):
+    def create_directory(self, path, permissions=None):
+        directory = os.path.expanduser(os.path.expandvars(path))
         if self.options.dry_run:
             self.info('Create directory: %s' % directory)
             if permissions is not None:
@@ -130,11 +135,11 @@ class ChangeDirectory(object):
             if self.save_dir:
                 os.chdir(self.save_dir)
 
-def perform_actions(options):
+def execute_feature_actions(options):
     runner = Runner(options)
-    # Initialize the action bundles.
-    for bundle in G.bundles:
-        bundle.initialize(runner)
+    # Initialize the features.
+    for feature in G.features:
+        feature.initialize(runner)
     # Perform the actions (for dry or normal run).
-    for bundle in G.bundles:
-        bundle.perform(runner)
+    for feature in G.features:
+        feature.execute_actions(runner)

@@ -1,18 +1,18 @@
-# Sample castiron configuration to perform the following actions as needed:
-#   - generate an SSH private key
-#   - install system packages
-#   - install Python packages
+# Sample castiron configuration
 
-import castiron.actions.ssh_generate_key
-import castiron.actions.system_packages
-import castiron.actions.python_packages
-
-castiron.actions.system_packages.add(
+# install system packages
+import castiron.features.system
+castiron.features.system.add_packages(
     'vim',
     'build-essential',
     'ctags',
 )
 
-castiron.actions.python_packages.add(
+# install Python packages
+import castiron.features.python
+castiron.features.python.add_packages(
     'pyinstaller',
 )
+
+# generate an SSH private key
+import castiron.features.ssh
