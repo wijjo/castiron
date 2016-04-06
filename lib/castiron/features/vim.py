@@ -14,7 +14,7 @@ def add_custom_configuration(*settings):
 def set_vimrc(vimrc):
     G.vimrc = vimrc
 
-@castiron_feature('vim-setup', 'Vim: configure for user')
+@castiron_feature('vim', 'Vim: configure user settings')
 def _initialize(runner):
     yield CreateDirectory('~/.backup')
     if G.settings:

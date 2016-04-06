@@ -17,6 +17,7 @@ class G:
     path_for_timestamp = '/var/cache/apt'
     packages = [
         'aptitude',
+        'screen',
     ]
     inputrc = None
 
@@ -47,7 +48,7 @@ class SystemPackagesAction(object):
     def execute(self, runner):
         runner.run_command('sudo apt-get install %s' % ' '.join(G.packages))
 
-@castiron_feature('apt-upgrade', 'APT: update and upgrade installed packages')
+@castiron_feature('system', 'System: configure settings and packages')
 def _initialize(runner):
     yield SystemUpgradeAction()
     if G.packages:

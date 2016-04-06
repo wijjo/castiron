@@ -21,7 +21,7 @@ class PythonPackagesAction(object):
     def execute(self, runner):
         runner.run_command('sudo pip install %s' % ' '.join(G.packages))
 
-@castiron_feature('python-packages', 'Python: install packages')
+@castiron_feature('python', 'Python: configure settings and packages')
 def _initialize(runner):
     if G.packages:
         yield PythonPackagesAction()

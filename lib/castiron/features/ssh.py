@@ -33,7 +33,7 @@ class SSHAuthorizeKeyAction(object):
         public_key = runner.read_text('RSA public key')
         runner.write_file(G.authorized_keys_file, '%s\n' % public_key, permissions=0600)
 
-@castiron_feature('ssh-generate-key', 'SSH: generate private key')
+@castiron_feature('ssh', 'SSH: initialize user configuration')
 def _initialize(runner):
     yield CreateDirectory('~/.ssh', permissions=0700)
     yield SSHGenerateKeyAction()

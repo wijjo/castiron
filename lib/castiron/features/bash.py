@@ -14,7 +14,7 @@ def set_private_configs(private_rc, private_profile):
     G.private_rc = os.path.expandvars(os.path.expanduser(private_rc))
     G.private_profile = os.path.expandvars(os.path.expanduser(private_profile))
 
-@castiron_feature('bash-setup', 'Bash: configure for user')
+@castiron_feature('bash', 'Bash: configure user settings')
 def _initialize(runner):
     if G.private_rc:
         yield InjectText('~/.bashrc', 'source.*bashrc', '# Private config', 'source %s' % G.private_rc)

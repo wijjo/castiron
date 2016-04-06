@@ -38,7 +38,7 @@ class GitCloneAction(object):
         with runner.chdir(G.repo_base_dir):
             runner.run_command('git clone %s' % repo_url)
 
-@castiron_feature('git-clone', 'Git: create local repositories')
+@castiron_feature('git', 'Git: configure settings and local repositories')
 def _initialize(runner):
     if G.gitconfig:
         yield CreateLink(G.gitconfig, '~/.gitconfig')
