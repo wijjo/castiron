@@ -1,4 +1,4 @@
-from castiron.tools import castiron_builder
+import castiron.main
 
 import castiron.builder.system
 castiron.builder.system.add_packages(
@@ -24,7 +24,7 @@ class PythonPackagesAction(object):
     def description(self):
         return 'install %d Python package(s): %s' % (len(G.packages), ' '.join(G.packages))
 
-@castiron_builder('python', 'Python settings and packages')
-def _initialize(runner):
+@castiron.main.builder('python', 'Python settings and packages')
+def _builder(runner):
     if G.packages:
         yield PythonPackagesAction()

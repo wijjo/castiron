@@ -1,4 +1,4 @@
-from castiron.tools import castiron_builder
+import castiron.main
 
 import castiron.builder.system
 castiron.builder.system.add_packages(
@@ -6,6 +6,6 @@ castiron.builder.system.add_packages(
     'ctags',
 )
 
-@castiron_builder('development', 'install development tools')
+@castiron.main.builder('development', 'install development tools')
 def _initialize(runner):
     pass

@@ -1,12 +1,12 @@
-from castiron.tools import castiron_builder, ActionException
-from castiron.action.filesystem import CreateLink, CopyFile
-
 import sys
 import os
 import time
 
+import castiron.main
+import castiron.action.filesystem
+
 if os.path.exists('/etc/redhat-release'):
-    raise ActionException('Red Hat/CentOS is not yet supported.')
+    raise castiron.main.ActionException('Red Hat/CentOS is not yet supported.')
 
 #TODO: Support yum, etc..
 
@@ -24,9 +24,9 @@ def add_packages(*packages):
 def inputrc(inputrc, copy=True):
     path = os.path.expandvars(os.path.expanduser(inputrc))
     if copy:
-        G.other_actions.append(CopyFile(path, '~/.inputrc'))
+        G.other_actions.append(castiron.action.filesystem.CopyFile(path, '~/.inputrc'))
     else:
-        G.other_actions.append(CreateLink(path, '~/.inputrc'))
+        G.other_actions.append(castiron.action.filesystem.CreateLink(path, '~/.inputrc'))
 
 class SystemUpgradeAction(object):
 
@@ -54,8 +54,8 @@ class SystemPackagesAction(object):
     def description(self):
         return 'install %d system package(s): %s' % (len(G.packages), ' '.join(G.packages))
 
-@castiron_builder('system', 'system settings and packages')
-def _initialize(runner):
+@castiron.main.builder('system', 'system settings and packages')
+def _builder(runner):
     yield SystemUpgradeAction()
     if G.packages:
         yield SystemPackagesAction()

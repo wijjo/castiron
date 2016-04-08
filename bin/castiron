@@ -18,14 +18,14 @@ def add_castiron_lib_to_sys_path():
 
 add_castiron_lib_to_sys_path()
 
-from castiron import tools
+import castiron.main
 
 def main(config_path, dry_run=False, dumb_run=False):
-    options = tools.Options(dry_run=dry_run, dumb_run=dumb_run)
+    options = castiron.main.Options(dry_run=dry_run, dumb_run=dumb_run)
     execfile(config_path)
     try:
-        tools.execute_builder_actions(options)
-    except tools.ActionException, e:
+        castiron.main.execute_builder_actions(options)
+    except castiron.main.ActionException, e:
         sys.stderr.write('Action error: %s\n' % str(e))
         sys.exit(255)
 

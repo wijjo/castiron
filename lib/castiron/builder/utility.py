@@ -1,4 +1,4 @@
-from castiron.tools import castiron_builder
+import castiron.main
 
 import castiron.builder.system
 
@@ -26,6 +26,6 @@ def features(*names):
     if unknown:
         sys.stderr.write('Unknown utility features: %s' % ' '.join(unknown))
 
-@castiron_builder('utility', 'install utility programs')
-def _initialize(runner):
+@castiron.main.builder('utility', 'install utility programs')
+def _builder(runner):
     pass

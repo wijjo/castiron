@@ -1,5 +1,5 @@
-from castiron.tools import castiron_builder
-from castiron.action.filesystem import CreateLink
+import castiron.main
+import castiron.action.filesystem
 
 # Make sure git is installed.
 import castiron.builder.system
@@ -40,9 +40,9 @@ class GitCloneAction(object):
         with runner.chdir(G.repo_base_dir):
             runner.run_command('git clone %s' % repo_url)
 
-@castiron_builder('git', 'configure Git settings and local repositories')
-def _initialize(runner):
+@castiron.main.builder('git', 'configure Git settings and local repositories')
+def _builder(runner):
     if G.gitconfig:
-        yield CreateLink(G.gitconfig, '~/.gitconfig')
+        yield castiron.action.filesystem.CreateLink(G.gitconfig, '~/.gitconfig')
     for repo_url in G.repo_urls:
         yield GitCloneAction(repo_url)
