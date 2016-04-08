@@ -1,8 +1,8 @@
-from castiron.tools import castiron_feature
-from castiron.actions.filesystem import InjectText, CreateDirectory, CreateLink
+from castiron.tools import castiron_builder
+from castiron.action.filesystem import InjectText, CreateDirectory, CreateLink
 
-import castiron.features.system
-castiron.features.system.add_packages('vim')
+import castiron.builder.system
+castiron.builder.system.add_packages('vim')
 
 class G:
     settings = []
@@ -14,7 +14,7 @@ def add_custom_configuration(*settings):
 def set_vimrc(vimrc):
     G.vimrc = vimrc
 
-@castiron_feature('vim', 'Vim: configure user settings')
+@castiron_builder('vim', 'configure Vim user settings')
 def _initialize(runner):
     yield CreateDirectory('~/.backup')
     if G.settings:

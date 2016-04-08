@@ -19,8 +19,9 @@ def _append_text(runner, path, text):
             f.write('\n')
 
 class OpBase(object):
-    def __init__(self, path):
+    def __init__(self, path, description):
         self.path = os.path.expanduser(os.path.expandvars(path))
+        self.description = description
 
 class InjectText(OpBase):
 
@@ -33,10 +34,9 @@ class InjectText(OpBase):
         skip_if skips the edit when a line matches a regex pattern.
         lines are the text lines to inject.
         '''
-        super(InjectText, self).__init__(path)
-        self.description = 'File: inject text: %s' % self.path
         self.skip_if_re = re.compile(skip_if)
         self.lines = lines
+        super(InjectText, self).__init__(path, 'inject text into file: %s' % path)
 
     def check(self, runner):
         return _file_contains_re(runner, self.path, self.skip_if_re)
@@ -44,25 +44,39 @@ class InjectText(OpBase):
     def execute(self, runner):
         _append_text(runner, self.path, '\n'.join(self.lines))
 
-class CreateLink(OpBase):
+class CopyFile(OpBase):
 
-    def __init__(self, path, permissions=None):
-        super(CreateLink, self).__init__(path)
+    def __init__(self, path, source, overwrite=False, permissions=None):
+        self.source = source
+        self.overwrite = overwrite
         self.permissions = permissions
+        super(CopyFile, self).__init__(path, 'copy file from "%s" to "%s"' % (source, path))
 
     def check(self, runner):
-        return (   not os.path.exists(self.path)
+        return (   (not os.path.exists(self.path) or self.overwrite)
                 or (    self.permissions is not None
                     and self.permissions != oct(os.stat(self.path).st_mode & 0777)))
 
     def execute(self, runner):
-        runner.create_directory(self.path, permissions=self.permissions)
+        runner.copy_file(self.source, self.path, overwrite=self.overwrite, permissions=self.permissions)
+
+class CreateLink(OpBase):
+
+    def __init__(self, source, path):
+        self.source = source
+        super(CreateLink, self).__init__(path, 'create link from "%s" to "%s"' % (source, path))
+
+    def check(self, runner):
+        return not os.path.exists(self.path)
+
+    def execute(self, runner):
+        runner.create_link(self.source, self.path)
 
 class CreateDirectory(OpBase):
 
     def __init__(self, path, permissions=None):
-        super(CreateDirectory, self).__init__(path)
         self.permissions = permissions
+        super(CreateDirectory, self).__init__(path, 'create directory "%s"' % path)
 
     def check(self, runner):
         return (   not os.path.exists(self.path)

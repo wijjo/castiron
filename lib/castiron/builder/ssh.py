@@ -1,5 +1,5 @@
-from castiron.tools import castiron_feature
-from castiron.actions.filesystem import CreateDirectory
+from castiron.tools import castiron_builder
+from castiron.action.filesystem import CreateDirectory
 
 import os
 
@@ -10,6 +10,7 @@ class G:
 
 class SSHGenerateKeyAction(object):
 
+    description = 'generate SSH private/public keys'
     destructive = True
 
     def check(self, runner):
@@ -23,6 +24,7 @@ class SSHGenerateKeyAction(object):
 
 class SSHAuthorizeKeyAction(object):
 
+    description = 'authorize the initial SSH public key'
     # Don't overwrite an existing authorized_keys file.
     destructive  = True
 
@@ -33,7 +35,7 @@ class SSHAuthorizeKeyAction(object):
         public_key = runner.read_text('RSA public key')
         runner.write_file(G.authorized_keys_file, '%s\n' % public_key, permissions=0600)
 
-@castiron_feature('ssh', 'SSH: initialize user configuration')
+@castiron_builder('ssh', 'initialize SSH user configuration')
 def _initialize(runner):
     yield CreateDirectory('~/.ssh', permissions=0700)
     yield SSHGenerateKeyAction()

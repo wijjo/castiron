@@ -1,5 +1,5 @@
-from castiron.tools import castiron_feature, ActionException
-from castiron.actions.filesystem import CreateLink
+from castiron.tools import castiron_builder, ActionException
+from castiron.action.filesystem import CreateLink, CopyFile
 
 import sys
 import os
@@ -15,19 +15,22 @@ class G:
     # Minimum number of seconds between apt updates.
     update_interval_secs = 7200
     path_for_timestamp = '/var/cache/apt'
-    packages = [
-        'aptitude',
-        'screen',
-    ]
-    inputrc = None
+    packages = []
+    other_actions = []
 
 def add_packages(*packages):
     G.packages.extend(packages)
 
-def set_inputrc(inputrc):
-    G.inputrc = os.path.expandvars(os.path.expanduser(inputrc))
+def inputrc(inputrc, copy=True):
+    path = os.path.expandvars(os.path.expanduser(inputrc))
+    if copy:
+        G.other_actions.append(CopyFile(path, '~/.inputrc'))
+    else:
+        G.other_actions.append(CreateLink(path, '~/.inputrc'))
 
 class SystemUpgradeAction(object):
+
+    description = 'upgrade system packages'
 
     def check(self, runner):
         # Give the go-ahead if either it would be the first update or no update has happened
@@ -48,11 +51,14 @@ class SystemPackagesAction(object):
     def execute(self, runner):
         runner.run_command('sudo apt-get install %s' % ' '.join(G.packages))
 
-@castiron_feature('system', 'System: configure settings and packages')
+    def description(self):
+        return 'install %d system package(s): %s' % (len(G.packages), ' '.join(G.packages))
+
+@castiron_builder('system', 'system settings and packages')
 def _initialize(runner):
     yield SystemUpgradeAction()
     if G.packages:
         yield SystemPackagesAction()
-    if G.inputrc:
-        yield CreateLink(G.inputrc, '~/.inputrc')
+    for other_action in G.other_actions:
+        yield other_action
 

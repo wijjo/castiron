@@ -1,7 +1,7 @@
-from castiron.tools import castiron_feature
+from castiron.tools import castiron_builder
 
-import castiron.features.system
-castiron.features.system.add_packages(
+import castiron.builder.system
+castiron.builder.system.add_packages(
     'python-pip',
     'python-dev',
     'ipython',
@@ -21,7 +21,10 @@ class PythonPackagesAction(object):
     def execute(self, runner):
         runner.run_command('sudo pip install %s' % ' '.join(G.packages))
 
-@castiron_feature('python', 'Python: configure settings and packages')
+    def description(self):
+        return 'install %d Python package(s): %s' % (len(G.packages), ' '.join(G.packages))
+
+@castiron_builder('python', 'Python settings and packages')
 def _initialize(runner):
     if G.packages:
         yield PythonPackagesAction()

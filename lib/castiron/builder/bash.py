@@ -1,8 +1,8 @@
-from castiron.tools import castiron_feature
-from castiron.actions.filesystem import InjectText
+from castiron.tools import castiron_builder
+from castiron.action.filesystem import InjectText
 
-import castiron.features.system
-castiron.features.system.add_packages('bash-completion')
+import castiron.builder.system
+castiron.builder.system.add_packages('bash-completion')
 
 import os
 
@@ -14,7 +14,7 @@ def set_private_configs(private_rc, private_profile):
     G.private_rc = os.path.expandvars(os.path.expanduser(private_rc))
     G.private_profile = os.path.expandvars(os.path.expanduser(private_profile))
 
-@castiron_feature('bash', 'Bash: configure user settings')
+@castiron_builder('bash', 'configure Bash user settings')
 def _initialize(runner):
     if G.private_rc:
         yield InjectText('~/.bashrc', 'source.*bashrc', '# Private config', 'source %s' % G.private_rc)
