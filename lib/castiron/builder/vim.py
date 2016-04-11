@@ -1,8 +1,8 @@
-import castiron.main
+import castiron
 import castiron.action.filesystem
-
 import castiron.builder.system
-castiron.builder.system.add_packages('vim')
+
+castiron.builder.system.features('vim')
 
 class G:
     settings = []
@@ -14,7 +14,7 @@ def add_custom_configuration(*settings):
 def set_vimrc(vimrc):
     G.vimrc = vimrc
 
-@castiron.main.builder('vim', 'configure Vim user settings')
+@castiron.register('vim', 'configure Vim user settings')
 def _builder(runner):
     yield castiron.action.filesystem.CreateDirectory('~/.backup')
     if G.settings:

@@ -1,5 +1,4 @@
-import castiron.main
-
+import castiron
 import castiron.builder.system
 
 import sys
@@ -20,12 +19,12 @@ def features(*names):
     unknown = []
     for name in names:
         if name in G.tools:
-            castiron.builder.system.add_packages(*G.tools[name])
+            castiron.builder.system.features(*G.tools[name])
         else:
             unknown.extend(name)
     if unknown:
         sys.stderr.write('Unknown utility features: %s' % ' '.join(unknown))
 
-@castiron.main.builder('utility', 'install utility programs')
+@castiron.register('utility', 'install utility programs')
 def _builder(runner):
     pass

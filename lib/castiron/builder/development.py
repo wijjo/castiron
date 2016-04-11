@@ -1,11 +1,11 @@
-import castiron.main
-
+import castiron
 import castiron.builder.system
-castiron.builder.system.add_packages(
+
+castiron.builder.system.features(
     'build-essential',
     'ctags',
 )
 
-@castiron.main.builder('development', 'install development tools')
+@castiron.register('development', 'install development tools')
 def _initialize(runner):
     pass

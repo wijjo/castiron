@@ -18,14 +18,14 @@ def add_castiron_lib_to_sys_path():
 
 add_castiron_lib_to_sys_path()
 
-import castiron.main
+import castiron
 
-def main(config_path, dry_run=False, dumb_run=False):
-    options = castiron.main.Options(dry_run=dry_run, dumb_run=dumb_run)
+def main(config_path, dry_run=False, dumb_run=False, verbose=False):
+    options = castiron.main.Options(dry_run=dry_run, dumb_run=dumb_run, verbose=verbose)
     execfile(config_path)
     try:
         castiron.main.execute_builder_actions(options)
-    except castiron.main.ActionException, e:
+    except castiron.ActionException, e:
         sys.stderr.write('Action error: %s\n' % str(e))
         sys.exit(255)
 
@@ -37,9 +37,11 @@ if __name__ == '__main__':
                         help='display actions without executing them')
     parser.add_argument('-d', '--dumb-run', action='store_true', dest='dumb_run',
                         help='run actions without optimizing for system state')
+    parser.add_argument('-v', '--verbose', action='store_true', dest='verbose',
+                        help='display verbose messages')
     args = parser.parse_args()
     try:
-        main(args.config_path, dry_run=args.dry_run, dumb_run=args.dumb_run)
+        main(args.config_path, dry_run=args.dry_run, dumb_run=args.dumb_run, verbose=args.verbose)
     except KeyboardInterrupt:
         sys.stderr.write('\n<interrupted>\n')
         sys.exit(255)

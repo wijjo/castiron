@@ -2,11 +2,11 @@ import sys
 import os
 import time
 
-import castiron.main
+import castiron
 import castiron.action.filesystem
 
 if os.path.exists('/etc/redhat-release'):
-    raise castiron.main.ActionException('Red Hat/CentOS is not yet supported.')
+    raise castiron.ActionException('Red Hat/CentOS is not yet supported.')
 
 #TODO: Support yum, etc..
 
@@ -15,10 +15,13 @@ class G:
     # Minimum number of seconds between apt updates.
     update_interval_secs = 7200
     path_for_timestamp = '/var/cache/apt'
+    # For now features are simply equivalent to Debian package names.  When Yum
+    # support is added features should become universal names that get
+    # translated as needed between package management systems.
     packages = []
     other_actions = []
 
-def add_packages(*packages):
+def features(*packages):
     G.packages.extend(packages)
 
 def inputrc(inputrc, copy=True):
@@ -40,25 +43,35 @@ class SystemUpgradeAction(object):
                     > int(os.path.getmtime(G.path_for_timestamp)) / G.update_interval_secs))
 
     def execute(self, runner):
-        runner.run_command('sudo apt-get update')
-        runner.run_command('sudo apt-get upgrade')
+        runner.run('sudo', 'apt-get', '-qq', 'update')
+        runner.run('sudo', 'apt-get', '-qq', 'upgrade')
 
-class SystemPackagesAction(object):
+class SystemPackageAction(object):
+
+    def __init__(self, package, to_install):
+        self.package = package
+        self.to_install = to_install
 
     def check(self, runner):
-        return bool(G.packages)
+        return self.to_install
 
     def execute(self, runner):
-        runner.run_command('sudo apt-get install %s' % ' '.join(G.packages))
+        runner.run('sudo', 'apt-get', 'install', '-qq', self.package)
 
     def description(self):
-        return 'install %d system package(s): %s' % (len(G.packages), ' '.join(G.packages))
+        return 'install system package: %s' % self.package
 
-@castiron.main.builder('system', 'system settings and packages')
+@castiron.register('system', 'system settings and packages')
 def _builder(runner):
     yield SystemUpgradeAction()
-    if G.packages:
-        yield SystemPackagesAction()
+    to_install = set()
+    runner.info('Checking installed packages...')
+    for line in castiron.tools.pipe_command('sudo', 'apt-get', '-sqq', 'install', *G.packages):
+        fields = line.split()
+        if len(fields) >= 2 and fields[0] in ('Inst', 'Conf', 'Remv'):
+            to_install.add(fields[1])
+    for package in G.packages:
+        yield SystemPackageAction(package, package in to_install)
     for other_action in G.other_actions:
         yield other_action
 

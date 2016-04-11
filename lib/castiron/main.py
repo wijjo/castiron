@@ -14,7 +14,7 @@ class Builder(object):
         self.actions = None
 
     def initialize(self, runner):
-        runner.info(self.description, prefix='.'.join([self.name, 'initialize']))
+        runner.info(self.description, contexts=[self.name, 'initialize'])
         actions = self.initializer(runner)
         if actions:
             self.actions = [action for action in actions if action]
@@ -22,30 +22,29 @@ class Builder(object):
     def execute_actions(self, runner):
         num_actions = len(self.actions) if self.actions else 0
         description = self.description if self.description else '(no description)'
-        message = '%s (actions=%d)' % (description, num_actions)
-        runner.info(message, prefix='.'.join([self.name, 'execute']))
+        runner.info(description, contexts=[self.name, 'execute'])
         if self.actions:
             action_number = 0
             for action in self.actions:
                 action_number += 1
                 # Run when needed or when it's harmless to rerun (non-destructive).
-                execute = action.check(runner) or not getattr(action, 'destructive', False)
-                prefix = '%s.action-%d' % (self.name, action_number)
+                execute = action.check(runner) or (
+                            runner.options.dumb_run and not getattr(action, 'destructive', False))
                 description = getattr(action, 'description', '(no description)')
                 if inspect.ismethod(description):
                     description = action.description()
-                message = '(%s) %s' % ('exec' if execute else 'skip', description)
-                runner.info(message, prefix=prefix)
+                contexts = [self.name, 'action', str(action_number)]
+                if not execute:
+                    contexts.append('(skip)')
+                runner.info(description, contexts=contexts)
                 if execute and not runner.options.dry_run:
                     action.execute(runner)
 
 class Options(object):
-    def __init__(self, dry_run=False, dumb_run=False):
+    def __init__(self, dry_run=False, dumb_run=False, verbose=False):
         self.dry_run = dry_run
         self.dumb_run = dumb_run
-
-class ActionException(Exception):
-    pass
+        self.verbose = verbose
 
 def execute_builder_actions(options):
     runner = castiron.runner.Runner(options)
@@ -57,18 +56,6 @@ def execute_builder_actions(options):
     runner.info('===== Executing builder actions%s ...' % ' (dry run)' if runner.options.dry_run else '')
     for builder in G.builders:
         builder.execute_actions(runner)
-
-class builder(object):
-    '''
-    @castiron.main.builder(name, description)
-    decorator for registering builder initializers
-    '''
-    def __init__(self, name, description):
-        self.name = name
-        self.description = description
-    def __call__(self, initializer):
-        add_builder(Builder(self.name, self.description, initializer))
-        return initializer
 
 def add_builder(builder):
     G.builders.append(builder)

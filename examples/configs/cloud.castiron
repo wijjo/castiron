@@ -2,7 +2,7 @@
 
 # install system packages
 import castiron.builder.system
-castiron.builder.system.add_packages(
+castiron.builder.system.features(
     'vim',
     'build-essential',
     'ctags',
@@ -10,7 +10,7 @@ castiron.builder.system.add_packages(
 
 # install Python packages
 import castiron.builder.python
-castiron.builder.python.add_packages(
+castiron.builder.python.features(
     'pyinstaller',
 )
 
