@@ -13,18 +13,24 @@ class G:
 def features(*packages):
     G.packages.extend(packages)
 
-class PythonPackagesAction(object):
+class PythonPackageAction(object):
+
+    def __init__(self, package):
+        self.package = package
 
     def check(self, runner):
-        return bool(G.packages)
+        for line in castiron.tools.pipe_command('pip', 'show', self.package):
+            if line.startswith('Version:'):
+                return True
+        return False
 
     def execute(self, runner):
-        runner.run('sudo', 'pip', 'install', ' '.join(G.packages))
+        runner.run('sudo', 'pip', 'install', self.package)
 
     def description(self):
-        return 'install %d Python package(s): %s' % (len(G.packages), ' '.join(G.packages))
+        return 'install Python package: %s' % self.package
 
 @castiron.register('python', 'Python settings and packages')
 def _builder(runner):
-    if G.packages:
-        yield PythonPackagesAction()
+    for package in G.packages:
+        yield PythonPackageAction(package)
