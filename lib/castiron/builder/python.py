@@ -2,15 +2,17 @@ import castiron
 import castiron.builder.system
 
 castiron.builder.system.features(
-    'python-pip',
-    'python-dev',
-    'ipython',
+    packages=[
+        'python-pip',
+        'python-dev',
+        'ipython',
+    ]
 )
 
 class G:
     packages = []
 
-def features(*packages):
+def features(packages=[]):
     G.packages.extend(packages)
 
 class PythonPackageAction(object):

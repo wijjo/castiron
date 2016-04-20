@@ -19,17 +19,14 @@ class G:
     # support is added features should become universal names that get
     # translated as needed between package management systems.
     packages = []
-    other_actions = []
+    inputrc = None
+    link_inputrc = False
 
-def features(*packages):
+def features(packages=[], inputrc=None, link_inputrc=False):
     G.packages.extend(packages)
-
-def inputrc(inputrc, copy=True):
-    path = os.path.expandvars(os.path.expanduser(inputrc))
-    if copy:
-        G.other_actions.append(castiron.action.filesystem.CopyFile(path, '~/.inputrc'))
-    else:
-        G.other_actions.append(castiron.action.filesystem.CreateLink(path, '~/.inputrc'))
+    if inputrc:
+        G.inputrc = os.path.expandvars(os.path.expanduser(inputrc))
+    G.link_inputrc = link_inputrc
 
 class SystemUpgradeAction(object):
 
@@ -72,6 +69,9 @@ def _builder(runner):
             to_install.add(fields[1])
     for package in G.packages:
         yield SystemPackageAction(package, package in to_install)
-    for other_action in G.other_actions:
-        yield other_action
+    if G.inputrc:
+        if G.link_inputrc:
+            yield castiron.action.filesystem.CreateLink(G.inputrc, '~/.inputrc')
+        else:
+            yield castiron.action.filesystem.CopyFile(G.inputrc, '~/.inputrc')
 

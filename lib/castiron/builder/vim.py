@@ -2,22 +2,27 @@ import castiron
 import castiron.action.filesystem
 import castiron.builder.system
 
-castiron.builder.system.features('vim')
+import os
+
+castiron.builder.system.features(packages=['vim'])
 
 class G:
     settings = []
-    vimrc = None
+    inject_rc = None
+    backup_directory = None
 
-def add_custom_configuration(*settings):
+def features(settings=[], inject_rc=None, backup_directory=None):
     G.settings.extend(settings)
-
-def set_vimrc(vimrc):
-    G.vimrc = vimrc
+    if inject_rc:
+        G.inject_rc = os.path.expandvars(os.path.expanduser(inject_rc))
+    if backup_directory:
+        G.backup_directory = os.path.expandvars(os.path.expanduser(backup_directory))
 
 @castiron.register('vim', 'configure Vim user settings')
 def _builder(runner):
-    yield castiron.action.filesystem.CreateDirectory('~/.backup')
+    if G.backup_directory:
+        yield castiron.action.filesystem.CreateDirectory(G.backup_directory)
     if G.settings:
-        yield castiron.action.filesystem.InjectText('~/.vimrc', '"castiron: custom', '"castiron: custom', *G.settings)
-    if G.vimrc:
-        yield castiron.action.filesystem.InjectText('~/.vimrc', '"castiron: private', '"castiron: private', 'source %s' % G.vimrc)
+        yield castiron.action.filesystem.InjectText('~/.vimrc', '"castiron: custom', G.settings)
+    if G.inject_rc:
+        yield castiron.action.filesystem.InjectText('~/.vimrc', '"castiron: private', ['source %s' % G.inject_rc])

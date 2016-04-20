@@ -42,10 +42,15 @@ class Runner(object):
     def error(self, message, **kwargs):
         _log(sys.stderr, 'ERROR', message, **kwargs)
 
+    def fatal(self, message, **kwargs):
+        _log(sys.stderr, 'FATAL', message, **kwargs)
+        sys.exit(255)
+
     def create_directory(self, path, permissions=None):
         directory = os.path.expanduser(os.path.expandvars(path))
         if self.options.dry_run or self.options.verbose:
-            self.info('Create directory: %s' % directory)
+            if not os.path.exists(directory):
+                self.info('Create directory: %s' % directory)
         if self.options.dry_run:
             if permissions is not None:
                 self.info('Set directory permissions: %od' % permissions)
@@ -105,7 +110,7 @@ class Runner(object):
             return
         os.symlink(source, target_path)
 
-    def copy_file(self, source, target, overwrite=False, permissions=None):
+    def copy_file(self, source, target, overwrite=False, permissions=None, create_directory=False):
         if self.options.dry_run or self.options.verbose:
             self.info('Copy file: %s -> %s' % (target, source))
             if permissions is not None:
@@ -115,6 +120,8 @@ class Runner(object):
         if overwrite or (os.path.exists(target) and not os.path.isdir(target)):
             self.info('File exists: %s' % target)
             return
+        if create_directory:
+            self.create_directory(os.path.dirname(directory))
         shutil.copyfile(source, target)
         if permissions is not None:
             os.chmod(target, permissions)

@@ -1,18 +1,32 @@
-# Sample castiron configuration
+### Sample castiron configuration
 
 # install system packages
 import castiron.builder.system
 castiron.builder.system.features(
-    'vim',
-    'build-essential',
-    'ctags',
+    packages=['vim', 'build-essential', 'ctags']
 )
 
 # install Python packages
 import castiron.builder.python
 castiron.builder.python.features(
-    'pyinstaller',
+    packages=['pyinstaller']
 )
 
-# generate an SSH private key
+# generate an SSH key pair and display the public key for copy/paste
 import castiron.builder.ssh
+castiron.builder.ssh.features=(
+    generate_keys=True,
+    show_public_key=True,
+)
+
+# install additional software bundles based on needed capabilities
+import castiron.builder.software
+castiron.builder.software.features(
+    fast_search=True,
+    other_compression=True,
+    package_management=True,
+    remote_sessions=True,
+    process_management=True,
+    network_management=True,
+    software_development=True,
+)

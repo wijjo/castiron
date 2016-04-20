@@ -1,22 +1,23 @@
 import os
-import re
 
-def _file_contains_re(runner, path, contains_re):
+def file_has_line(runner, path, marker):
     real_path = os.path.realpath(os.path.expanduser(path))
     if os.path.exists(real_path):
         with open(real_path) as f:
             for line in f:
-                if contains_re.search(line.rstrip()):
+                if line.find(marker) >= 0:
                     return True
     return False
 
-def _append_text(runner, path, text):
+def inject_text(runner, path, text, permissions=None):
     real_path = os.path.realpath(os.path.expanduser(path))
     with open(real_path, 'a' if os.path.exists(real_path) else 'w') as f:
         f.write('\n')
         f.write(text)
         if not text.endswith('\n'):
             f.write('\n')
+    if permissions is not None:
+        os.chmod(real_path, permissions)
 
 class OpBase(object):
     def __init__(self, path, description):
@@ -25,31 +26,34 @@ class OpBase(object):
 
 class InjectText(OpBase):
 
-    # Don't re-inject the text if it's already there.
+    # Don't reinject the text if it's already there.
     destructive = True
 
-    def __init__(self, path, skip_if, *lines):
+    def __init__(self, path, marker, lines, permissions=None):
         '''
         path is the file to edit or create.
-        skip_if skips the edit when a line matches a regex pattern.
+        marker skips the edit when a line matches.
         lines are the text lines to inject.
+        permissions is an optional permission mask for the file
         '''
-        self.skip_if_re = re.compile(skip_if)
+        self.marker = marker
         self.lines = lines
+        self.permissions = permissions
         super(InjectText, self).__init__(path, 'inject text into file: %s' % path)
 
     def check(self, runner):
-        return _file_contains_re(runner, self.path, self.skip_if_re)
+        return file_has_line(runner, self.path, self.marker)
 
     def execute(self, runner):
-        _append_text(runner, self.path, '\n'.join(self.lines))
+        inject_text(runner, self.path, '\n'.join(self.lines), permissions=self.permissions)
 
 class CopyFile(OpBase):
 
-    def __init__(self, path, source, overwrite=False, permissions=None):
+    def __init__(self, path, source, overwrite=False, permissions=None, create_directory=False):
         self.source = source
         self.overwrite = overwrite
         self.permissions = permissions
+        self.create_directory = create_directory
         super(CopyFile, self).__init__(path, 'copy file from "%s" to "%s"' % (source, path))
 
     def check(self, runner):
@@ -58,7 +62,10 @@ class CopyFile(OpBase):
                     and self.permissions != oct(os.stat(self.path).st_mode & 0777)))
 
     def execute(self, runner):
-        runner.copy_file(self.source, self.path, overwrite=self.overwrite, permissions=self.permissions)
+        runner.copy_file(self.source, self.path,
+                         overwrite=self.overwrite,
+                         permissions=self.permissions,
+                         create_directory=self.create_directory)
 
 class CreateLink(OpBase):
 

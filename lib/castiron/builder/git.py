@@ -2,23 +2,22 @@ import castiron
 import castiron.action.filesystem
 import castiron.builder.system
 
-castiron.builder.system.features('git')
+castiron.builder.system.features(packages=['git'])
 
 import os
 
 class G:
-    repo_base_dir = os.path.expanduser('~/git')
-    repo_urls = []
+    base_directory = None
+    repository_urls = []
     gitconfig = None
+    link_gitconfig = False
 
-def base_directory(base_dir):
-    G.repo_base_dir = os.path.expanduser(os.path.expandvars(base_dir))
-
-def repositories(*repo_urls):
-    G.repo_urls.extend(repo_urls)
-
-def set_gitconfig(gitconfig):
-    G.gitconfig = os.path.expandvars(os.path.expanduser(gitconfig))
+def features(base_directory='~/git', repository_urls=[], gitconfig=None, link_gitconfig=False):
+    G.base_directory = os.path.expanduser(os.path.expandvars(base_directory))
+    G.repository_urls.extend(repository_urls)
+    if gitconfig:
+        G.gitconfig = os.path.expandvars(os.path.expanduser(gitconfig))
+    G.link_gitconfig = link_gitconfig
 
 class GitCloneAction(object):
 
@@ -31,17 +30,20 @@ class GitCloneAction(object):
 
     def check(self, runner):
         dir_name = os.path.splitext(os.path.basename(self.repo_url.split(':')[-1]))[0]
-        return not os.path.exists(os.path.join(G.repo_base_dir, dir_name))
+        return not os.path.exists(os.path.join(G.base_directory, dir_name))
 
     def execute(self, runner):
-        if not os.path.exists(G.repo_base_dir):
-            os.makedirs(G.repo_base_dir)
-        with runner.chdir(G.repo_base_dir):
+        if not os.path.exists(G.base_directory):
+            os.makedirs(G.base_directory)
+        with runner.chdir(G.base_directory):
             runner.run('git', 'clone', self.repo_url)
 
 @castiron.register('git', 'configure Git settings and local repositories')
 def _builder(runner):
     if G.gitconfig:
-        yield castiron.action.filesystem.CreateLink(G.gitconfig, '~/.gitconfig')
-    for repo_url in G.repo_urls:
-        yield GitCloneAction(repo_url)
+        if G.link_gitconfig:
+            yield castiron.action.filesystem.CreateLink(G.gitconfig, '~/.gitconfig')
+        else:
+            yield castiron.action.filesystem.CopyFile(G.gitconfig, '~/.gitconfig')
+    for repository_url in G.repository_urls:
+        yield GitCloneAction(repository_url)

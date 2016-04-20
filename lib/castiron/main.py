@@ -1,4 +1,6 @@
+import sys
 import inspect
+import yaml
 
 import castiron.runner
 
@@ -46,8 +48,7 @@ class Options(object):
         self.dumb_run = dumb_run
         self.verbose = verbose
 
-def execute_builder_actions(options):
-    runner = castiron.runner.Runner(options)
+def execute_builder_actions(runner):
     runner.info('===== Initializing builders ...')
     # Initialize the builders.
     for builder in G.builders:
@@ -59,3 +60,50 @@ def execute_builder_actions(options):
 
 def add_builder(builder):
     G.builders.append(builder)
+
+def load_config_yaml(runner, config_path):
+    with open(config_path) as f:
+        builders = yaml.load(f.read())
+        for builder_name in builders:
+            builder_module_name = 'castiron.builder.%(builder_name)s' % locals()
+            features = builders[builder_name]
+            runner.info('Import builder: %s' % builder_module_name)
+            exec 'import %(builder_module_name)s as builder_module' % locals()
+            feature_dict = {}
+            if hasattr(builder_module, 'features'):
+                arg_spec = inspect.getargspec(builder_module.features)
+                for argi in range(len(arg_spec.args)):
+                    feature_dict[arg_spec.args[argi]] = arg_spec.defaults[argi]
+            else:
+                feature_dict = {}
+            unknown_features = []
+            for feature_name in features:
+                if feature_name not in feature_dict:
+                    unknown_features.append(feature_name)
+            if unknown_features:
+                runner.fatal('Unknown %s features: %s' % (builder_module_name, ' '.join(sorted(unknown_features))))
+            try:
+                builder_module.features(**features)
+            except Exception, e:
+                runner.fatal('%s.features() exception[%s]: %s' % (builder_module_name, e.__class__.__name__, str(e)))
+        builder_module = None
+
+def load_config_python(runner, config_path):
+    execfile(config_path)
+
+def load_config(runner, config_path):
+    if config_path.endswith('.py'):
+        load_config_python(runner, config_path)
+    else:
+        load_config_yaml(runner, config_path)
+
+def main(config_path, dry_run=False, dumb_run=False, verbose=False):
+    options = Options(dry_run=dry_run, dumb_run=dumb_run, verbose=verbose)
+    runner = castiron.runner.Runner(options)
+    load_config(runner, config_path)
+    try:
+        execute_builder_actions(runner)
+    except castiron.ActionException, e:
+        sys.stderr.write('Action error: %s\n' % str(e))
+        sys.exit(255)
+
