@@ -35,10 +35,11 @@ class Builder(object):
                 description = getattr(action, 'description', '(no description)')
                 if inspect.ismethod(description):
                     description = action.description()
-                contexts = [self.name, 'action', str(action_number)]
-                if not execute:
-                    contexts.append('(skip)')
-                runner.info(description, contexts=contexts)
+                if execute or runner.options.verbose:
+                    contexts = [self.name, 'action', str(action_number)]
+                    if not execute:
+                        contexts.append('(skip)')
+                    runner.info(description, contexts=contexts)
                 if execute and not runner.options.dry_run:
                     action.execute(runner)
 
@@ -67,7 +68,7 @@ def load_config_yaml(runner, config_path):
         for builder_name in builders:
             builder_module_name = 'castiron.builder.%(builder_name)s' % locals()
             features = builders[builder_name]
-            runner.info('Import builder: %s' % builder_module_name)
+            runner.verbose_info('Import builder: %s' % builder_module_name)
             exec 'import %(builder_module_name)s as builder_module' % locals()
             feature_dict = {}
             if hasattr(builder_module, 'features'):

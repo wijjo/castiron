@@ -21,6 +21,7 @@ class G:
     packages = []
     inputrc = None
     link_inputrc = False
+    to_install = None
 
 def features(packages=[], inputrc=None, link_inputrc=False):
     G.packages.extend(packages)
@@ -45,12 +46,18 @@ class SystemUpgradeAction(object):
 
 class SystemPackageAction(object):
 
-    def __init__(self, package, to_install):
+    def __init__(self, package):
         self.package = package
-        self.to_install = to_install
 
     def check(self, runner):
-        return self.to_install
+        if G.to_install is None:
+            G.to_install = set()
+            runner.verbose_info('Checking installed packages...')
+            for line in castiron.tools.pipe_command('sudo', 'apt-get', '-sqq', 'install', *G.packages):
+                fields = line.split()
+                if len(fields) >= 2 and fields[0] in ('Inst', 'Conf', 'Remv'):
+                    G.to_install.add(fields[1])
+        return self.package in G.to_install
 
     def execute(self, runner):
         runner.run('sudo', 'apt-get', 'install', '-qq', self.package)
@@ -61,14 +68,8 @@ class SystemPackageAction(object):
 @castiron.register('system', 'system settings and packages')
 def _builder(runner):
     yield SystemUpgradeAction()
-    to_install = set()
-    runner.info('Checking installed packages...')
-    for line in castiron.tools.pipe_command('sudo', 'apt-get', '-sqq', 'install', *G.packages):
-        fields = line.split()
-        if len(fields) >= 2 and fields[0] in ('Inst', 'Conf', 'Remv'):
-            to_install.add(fields[1])
     for package in G.packages:
-        yield SystemPackageAction(package, package in to_install)
+        yield SystemPackageAction(package)
     if G.inputrc:
         if G.link_inputrc:
             yield castiron.action.filesystem.CreateLink(G.inputrc, '~/.inputrc')

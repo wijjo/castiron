@@ -39,6 +39,10 @@ class Runner(object):
     def info(self, message, **kwargs):
         _log(sys.stdout, 'INFO', message, **kwargs)
 
+    def verbose_info(self, message, **kwargs):
+        if self.options.verbose:
+            _log(sys.stdout, 'INFO2', message, **kwargs)
+
     def error(self, message, **kwargs):
         _log(sys.stderr, 'ERROR', message, **kwargs)
 
