@@ -92,10 +92,13 @@ def load_config_python(runner, config_path):
     execfile(config_path)
 
 def load_config(runner, config_path):
-    if config_path.endswith('.py'):
-        load_config_python(runner, config_path)
-    else:
-        load_config_yaml(runner, config_path)
+    try:
+        if config_path.endswith('.py'):
+            load_config_python(runner, config_path)
+        else:
+            load_config_yaml(runner, config_path)
+    except Exception, e:
+        runner.fatal('Failed to read configuration: %s: exception[%s]: %s' % (config_path, e.__class__.__name__, str(e)))
 
 def main(config_path, dry_run=False, dumb_run=False, verbose=False):
     options = Options(dry_run=dry_run, dumb_run=dumb_run, verbose=verbose)
