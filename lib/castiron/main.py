@@ -111,3 +111,17 @@ def main(config_path, dry_run=False, dumb_run=False, verbose=False):
         sys.stderr.write('Action error: %s\n' % str(e))
         sys.exit(255)
 
+class register(object):
+    '''
+    @castiron.register(name, description)
+    decorator for registering builder initializers
+    '''
+    def __init__(self, name, description):
+        self.name = name
+        self.description = description
+    def __call__(self, initializer):
+        add_builder(Builder(self.name, self.description, initializer))
+        return initializer
+
+class ActionException(Exception):
+    pass
