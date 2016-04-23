@@ -2,7 +2,9 @@ import castiron
 import castiron.action.filesystem
 import castiron.builder.system
 
-castiron.builder.system.features(packages=['git'])
+castiron.builder.system.castiron_features(packages=['git'])
+
+castiron_description = 'configure Git settings and local repositories'
 
 import os
 
@@ -12,7 +14,12 @@ class G:
     gitconfig = None
     link_gitconfig = False
 
-def features(base_directory='~/git', repository_urls=[], gitconfig=None, link_gitconfig=False):
+def castiron_features(
+        base_directory='~/git',
+        repository_urls=[],
+        gitconfig=None,
+        link_gitconfig=False
+    ):
     G.base_directory = os.path.expanduser(os.path.expandvars(base_directory))
     G.repository_urls.extend(repository_urls)
     if gitconfig:
@@ -38,8 +45,7 @@ class GitCloneAction(object):
         with runner.chdir(G.base_directory):
             runner.run('git', 'clone', self.repo_url)
 
-@castiron.register('git', 'configure Git settings and local repositories')
-def _builder(runner):
+def castiron_initialize(runner):
     if G.gitconfig:
         if G.link_gitconfig:
             yield castiron.action.filesystem.CreateLink(G.gitconfig, '~/.gitconfig')

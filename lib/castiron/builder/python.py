@@ -1,7 +1,7 @@
 import castiron
 import castiron.builder.system
 
-castiron.builder.system.features(
+castiron.builder.system.castiron_features(
     packages=[
         'python-pip',
         'python-dev',
@@ -9,10 +9,12 @@ castiron.builder.system.features(
     ]
 )
 
+castiron_description = 'Python settings and packages'
+
 class G:
     packages = []
 
-def features(packages=[]):
+def castiron_features(packages=[]):
     G.packages.extend(packages)
 
 class PythonPackageAction(object):
@@ -32,7 +34,6 @@ class PythonPackageAction(object):
     def description(self):
         return 'install Python package: %s' % self.package
 
-@castiron.register('python', 'Python settings and packages')
-def _builder(runner):
+def castiron_initialize(runner):
     for package in G.packages:
         yield PythonPackageAction(package)

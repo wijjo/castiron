@@ -5,6 +5,8 @@ import time
 import castiron
 import castiron.action.filesystem
 
+castiron_description = 'system settings and packages'
+
 if os.path.exists('/etc/redhat-release'):
     raise castiron.ActionException('Red Hat/CentOS is not yet supported.')
 
@@ -15,15 +17,12 @@ class G:
     # Minimum number of seconds between apt updates.
     update_interval_secs = 7200
     path_for_timestamp = '/var/cache/apt'
-    # For now features are simply equivalent to Debian package names.  When Yum
-    # support is added features should become universal names that get
-    # translated as needed between package management systems.
     packages = []
     inputrc = None
     link_inputrc = False
     to_install = None
 
-def features(packages=[], inputrc=None, link_inputrc=False):
+def castiron_features(packages=[], inputrc=None, link_inputrc=False):
     G.packages.extend(packages)
     if inputrc:
         G.inputrc = os.path.expandvars(os.path.expanduser(inputrc))
@@ -65,8 +64,7 @@ class SystemPackageAction(object):
     def description(self):
         return 'install system package: %s' % self.package
 
-@castiron.register('system', 'system settings and packages')
-def _builder(runner):
+def castiron_initialize(runner):
     yield SystemUpgradeAction()
     for package in G.packages:
         yield SystemPackageAction(package)

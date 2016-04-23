@@ -2,6 +2,7 @@ import sys
 import os
 import shutil
 import copy
+import traceback
 
 from tools import ChangeDirectory, log_message, quote_arg_str, pipe_command, run_command
 
@@ -48,6 +49,13 @@ class Runner(object):
 
     def fatal(self, message, **kwargs):
         _log(sys.stderr, 'FATAL', message, **kwargs)
+        sys.exit(255)
+
+    def fatal_exception(self, message, exception, **kwargs):
+        _log(sys.stderr, 'FATAL', message, **kwargs)
+        _log(sys.stderr, 'FATAL', 'Exception[%s]: %s' % (exception.__class__.__name__, str(exception)))
+        if self.options.verbose:
+            traceback.print_exc()
         sys.exit(255)
 
     def create_directory(self, path, permissions=None):

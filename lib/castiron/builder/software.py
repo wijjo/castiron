@@ -3,6 +3,8 @@ import castiron.builder.system
 
 import sys
 
+castiron_description = 'install software bundles'
+
 class G:
     bundles = {
         'fast_search'          : ['silversearcher-ag'],
@@ -16,16 +18,15 @@ class G:
         'software_development' : ['build-essential', 'ctags'],
     }
 
-def features(bundles=[]):
+def castiron_features(bundles=[]):
     unknown_bundles = []
     for bundle in bundles:
         if bundle in G.bundles:
-            castiron.builder.system.features(packages=G.bundles[bundle])
+            castiron.builder.system.castiron_features(packages=G.bundles[bundle])
         else:
             unknown_bundles.extend(bundle)
     if unknown_bundles:
         sys.stderr.write('Unknown bundle(s): %s' % ' '.join(unknown_bundles))
 
-@castiron.register('software', 'install software bundles')
-def _builder(runner):
+def castiron_initialize(runner):
     pass
