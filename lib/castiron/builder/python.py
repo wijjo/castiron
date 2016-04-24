@@ -28,8 +28,8 @@ class PythonPackageAction(object):
                 return True
         return False
 
-    def execute(self, runner):
-        runner.run('sudo', 'pip', 'install', self.package)
+    def perform(self, runner):
+        runner.run('sudo', 'pip', 'install', '-q', self.package)
 
     def description(self):
         return 'install Python package: %s' % self.package

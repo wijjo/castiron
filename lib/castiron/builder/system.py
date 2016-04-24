@@ -39,7 +39,7 @@ class SystemUpgradeAction(object):
                 or (  int(time.time()) / G.update_interval_secs
                     > int(os.path.getmtime(G.path_for_timestamp)) / G.update_interval_secs))
 
-    def execute(self, runner):
+    def perform(self, runner):
         runner.run('sudo', 'apt-get', '-qq', 'update')
         runner.run('sudo', 'apt-get', '-qq', 'upgrade')
 
@@ -58,7 +58,7 @@ class SystemPackageAction(object):
                     G.to_install.add(fields[1])
         return self.package in G.to_install
 
-    def execute(self, runner):
+    def perform(self, runner):
         runner.run('sudo', 'apt-get', 'install', '-qq', self.package)
 
     def description(self):

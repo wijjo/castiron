@@ -5,8 +5,6 @@ import os
 
 castiron_description = 'initialize SSH user configuration'
 
-PROMPT_FOR_KEY = '?'
-
 class G:
     generate_keys = None
     private_key_path = None
@@ -15,6 +13,7 @@ class G:
     show_public_key_comment = None
     show_public_key_pause = None
     authorized_keys = None
+    prompt_for_key_string = 'prompt'
 
 def castiron_features(
         generate_keys=False,
@@ -23,7 +22,7 @@ def castiron_features(
         show_public_key=False,
         show_public_key_comment=None,
         show_public_key_pause=False,
-        # Actual public key strings and or PROMPT_FOR_KEY for prompted input.
+        # Actual public key strings and or prompt_for_key_string for prompted input.
         authorized_keys=[]
     ):
     G.generate_keys = generate_keys
@@ -49,7 +48,7 @@ class GenerateKeysAction(object):
     def check(self, runner):
         return not os.path.isfile(self.private_key_path)
 
-    def execute(self, runner):
+    def perform(self, runner):
         runner.run('ssh-keygen', '-t', 'rsa', '-q', '-f', self.private_key_path)
         if self.show_public_key:
             public_key = runner.read_file(self.public_key_path)
@@ -70,15 +69,18 @@ class AuthorizeKeyAction(object):
         self.authorized_keys_path = os.path.expanduser('~/.ssh/authorized_keys')
 
     def check(self, runner):
-        if self.authorized_key == PROMPT_FOR_KEY:
+        if self.authorized_key == G.prompt_for_key_string:
             return True
         return not castiron.action.filesystem.file_has_line(runner, self.authorized_keys_path, self.authorized_key)
 
-    def execute(self, runner):
-        if self.authorized_key == PROMPT_FOR_KEY:
+    def perform(self, runner):
+        if self.authorized_key == G.prompt_for_key_string:
             public_key = runner.read_text('RSA public key')
         else:
             public_key = self.authorized_key
+        if not public_key:
+            runner.info('No RSA public key provided - skipping.')
+            return
         castiron.action.filesystem.inject_text(runner, self.authorized_keys_path, [self.authorized_key], permissions=0600)
 
 def castiron_initialize(runner):

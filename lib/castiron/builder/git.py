@@ -39,7 +39,7 @@ class GitCloneAction(object):
         dir_name = os.path.splitext(os.path.basename(self.repo_url.split(':')[-1]))[0]
         return not os.path.exists(os.path.join(G.base_directory, dir_name))
 
-    def execute(self, runner):
+    def perform(self, runner):
         if not os.path.exists(G.base_directory):
             os.makedirs(G.base_directory)
         with runner.chdir(G.base_directory):

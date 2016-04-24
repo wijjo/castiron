@@ -9,6 +9,7 @@ class G:
     description_attribute_name = 'castiron_description'
     initialize_attribute_name = 'castiron_initialize'
     features_attribute_name = 'castiron_features'
+    perform_skipped_label = '(skipped)'
 
 class Builder(object):
 
@@ -30,6 +31,7 @@ class Builder(object):
         self.actions = None
 
     def configure(self, runner):
+        runner.verbose_info('configure - %s' % self.description, contexts=[self.name])
         feature_dict = {}
         arg_spec = inspect.getargspec(self.features_function)
         for argi in range(len(arg_spec.args)):
@@ -46,19 +48,18 @@ class Builder(object):
             self.runner.fatal_exception('%s.%s() exception' % builder_module_name, G.features_attribute_name, e)
 
     def initialize(self, runner):
-        runner.info(self.description, contexts=[self.name, 'initialize'])
+        runner.verbose_info('initialize - %s' % self.description, contexts=[self.name])
         actions = self.initialize_function(runner)
         if actions:
             self.actions = [action for action in actions if action]
 
     def perform(self, runner):
+        runner.verbose_info('perform - %s' % self.description, contexts=[self.name])
         num_actions = len(self.actions) if self.actions else 0
         description = self.description if self.description else '(no description)'
-        runner.info(description, contexts=[self.name, 'execute'])
         if self.actions:
             action_number = 0
             for action in self.actions:
-                action_number += 1
                 # Run when needed or when it's harmless to rerun (non-destructive).
                 execute = action.check(runner) or (
                             runner.options.dumb_run and not getattr(action, 'destructive', False))
@@ -66,12 +67,14 @@ class Builder(object):
                 if inspect.ismethod(description):
                     description = action.description()
                 if execute or runner.options.verbose:
-                    contexts = [self.name, 'action', str(action_number)]
-                    if not execute:
-                        contexts.append('(skip)')
-                    runner.info(description, contexts=contexts)
+                    if execute:
+                        action_number += 1
+                        label = str(action_number)
+                    else:
+                        label = G.perform_skipped_label
+                    runner.info('action %s - %s' % (label, description), contexts=[self.name])
                 if execute and not runner.options.dry_run:
-                    action.execute(runner)
+                    action.perform(runner)
 
 def import_builder(runner, builder_module_name):
     exec 'import %s' % builder_module_name
@@ -148,7 +151,6 @@ class Supervisor(object):
     def configure(self):
         self.runner.info('===== Configuring builder features ...')
         for builder in self.builders:
-            self.runner.verbose_info('Set builder features: %s' % builder.name)
             builder.configure(self.runner)
 
     def initialize(self):
@@ -159,7 +161,7 @@ class Supervisor(object):
 
     def perform(self):
         # Perform the actions (for dry or normal run).
-        self.runner.info('===== Executing builder actions%s ...' % ' (dry run)' if self.runner.options.dry_run else '')
+        self.runner.info('===== Performing builder actions%s ...' % ' (dry run)' if self.runner.options.dry_run else '')
         for builder in self.builders:
             builder.perform(self.runner)
 

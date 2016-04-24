@@ -37,14 +37,14 @@ class FishChangeUserShellAction(object):
                     break
         return okay
 
-    def execute(self, runner):
+    def perform(self, runner):
         if self.fish_path:
             runner.run('sudo', 'chsh', '-s', self.fish_path, os.getlogin())
 
 def castiron_initialize(runner):
     if G.copy_standard_config:
-        yield castiron.action.filesystem.CopyFile('/usr/share/fish/fish.config',
-                                                  '~/.config/fish/fish.config',
+        yield castiron.action.filesystem.CopyFile('/usr/share/fish/config.fish',
+                                                  '~/.config/fish/config.fish',
                                                   overwrite=False,
                                                   permissions=None,
                                                   create_directory=True)

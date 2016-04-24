@@ -133,7 +133,7 @@ class Runner(object):
             self.info('File exists: %s' % target)
             return
         if create_directory:
-            self.create_directory(os.path.dirname(directory))
+            self.create_directory(os.path.dirname(target))
         shutil.copyfile(source, target)
         if permissions is not None:
             os.chmod(target, permissions)

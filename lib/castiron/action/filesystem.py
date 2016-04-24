@@ -44,12 +44,12 @@ class InjectText(OpBase):
     def check(self, runner):
         return file_has_line(runner, self.path, self.marker)
 
-    def execute(self, runner):
+    def perform(self, runner):
         inject_text(runner, self.path, '\n'.join(self.lines), permissions=self.permissions)
 
 class CopyFile(OpBase):
 
-    def __init__(self, path, source, overwrite=False, permissions=None, create_directory=False):
+    def __init__(self, source, path, overwrite=False, permissions=None, create_directory=False):
         self.source = source
         self.overwrite = overwrite
         self.permissions = permissions
@@ -61,7 +61,7 @@ class CopyFile(OpBase):
                 or (    self.permissions is not None
                     and self.permissions != oct(os.stat(self.path).st_mode & 0777)))
 
-    def execute(self, runner):
+    def perform(self, runner):
         runner.copy_file(self.source, self.path,
                          overwrite=self.overwrite,
                          permissions=self.permissions,
@@ -76,7 +76,7 @@ class CreateLink(OpBase):
     def check(self, runner):
         return not os.path.exists(self.path)
 
-    def execute(self, runner):
+    def perform(self, runner):
         runner.create_link(self.source, self.path)
 
 class CreateDirectory(OpBase):
@@ -90,5 +90,5 @@ class CreateDirectory(OpBase):
                 or (    self.permissions is not None
                     and self.permissions != oct(os.stat(self.path).st_mode & 0777)))
 
-    def execute(self, runner):
+    def perform(self, runner):
         runner.create_directory(self.path, permissions=self.permissions)
