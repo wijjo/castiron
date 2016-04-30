@@ -5,7 +5,7 @@ import time
 import castiron
 import castiron.action.filesystem
 
-castiron_description = 'system settings and packages'
+description = 'system settings and packages'
 
 if os.path.exists('/etc/redhat-release'):
     raise castiron.ActionException('Red Hat/CentOS is not yet supported.')
@@ -22,7 +22,7 @@ class G:
     link_inputrc = False
     to_install = None
 
-def castiron_features(packages=[], inputrc=None, link_inputrc=False):
+def features(packages=[], inputrc=None, link_inputrc=False):
     G.packages.extend(packages)
     if inputrc:
         G.inputrc = os.path.expandvars(os.path.expanduser(inputrc))
@@ -64,7 +64,7 @@ class SystemPackageAction(object):
     def description(self):
         return 'install system package: %s' % self.package
 
-def castiron_initialize(runner):
+def actions(runner):
     yield SystemUpgradeAction()
     for package in G.packages:
         yield SystemPackageAction(package)

@@ -3,7 +3,7 @@ import castiron.builder.system
 
 import sys
 
-castiron_description = 'install software bundles'
+description = 'install software bundles'
 
 class G:
     bundles = {
@@ -18,15 +18,15 @@ class G:
         'software_development' : ['build-essential', 'ctags'],
     }
 
-def castiron_features(bundles=[]):
+def features(bundles=[]):
     unknown_bundles = []
     for bundle in bundles:
         if bundle in G.bundles:
-            castiron.builder.system.castiron_features(packages=G.bundles[bundle])
+            castiron.builder.system.features(packages=G.bundles[bundle])
         else:
             unknown_bundles.extend(bundle)
     if unknown_bundles:
         sys.stderr.write('Unknown bundle(s): %s' % ' '.join(unknown_bundles))
 
-def castiron_initialize(runner):
+def actions(runner):
     pass

@@ -4,20 +4,20 @@ import castiron.builder.system
 
 import os
 
-castiron_description = 'configure the Fish shell'
+description = 'configure the Fish shell'
 
 class G:
     copy_standard_config = False
     inject_private_config = None
     change_user_shell = False
 
-def castiron_features(copy_standard_config=False, inject_private_config=None, change_user_shell=False):
+def features(copy_standard_config=False, inject_private_config=None, change_user_shell=False):
     G.copy_standard_config = copy_standard_config
     if inject_private_config:
         G.inject_private_config = os.path.expandvars(os.path.expanduser(inject_private_config))
     G.change_user_shell = change_user_shell
 
-castiron.builder.system.castiron_features(packages=['fish'])
+castiron.builder.system.features(packages=['fish'])
 
 class FishChangeUserShellAction(object):
     description = "choose Fish as the user shell"
@@ -41,7 +41,7 @@ class FishChangeUserShellAction(object):
         if self.fish_path:
             runner.run('sudo', 'chsh', '-s', self.fish_path, os.getlogin())
 
-def castiron_initialize(runner):
+def actions(runner):
     if G.copy_standard_config:
         yield castiron.action.filesystem.CopyFile('/usr/share/fish/config.fish',
                                                   '~/.config/fish/config.fish',

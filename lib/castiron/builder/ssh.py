@@ -3,7 +3,7 @@ import castiron.action.filesystem
 
 import os
 
-castiron_description = 'initialize SSH user configuration'
+description = 'initialize SSH user configuration'
 
 class G:
     generate_keys = None
@@ -15,7 +15,7 @@ class G:
     authorized_keys = None
     prompt_for_key_string = 'prompt'
 
-def castiron_features(
+def features(
         generate_keys=False,
         private_key_path='~/.ssh/id_rsa',
         private_key_type='rsa',
@@ -83,7 +83,7 @@ class AuthorizeKeyAction(object):
             return
         castiron.action.filesystem.inject_text(runner, self.authorized_keys_path, [self.authorized_key], permissions=0600)
 
-def castiron_initialize(runner):
+def actions(runner):
     yield castiron.action.filesystem.CreateDirectory('~/.ssh', permissions=0700)
     if G.generate_keys:
         yield GenerateKeysAction(

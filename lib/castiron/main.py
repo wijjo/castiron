@@ -4,12 +4,11 @@ import yaml
 
 import castiron.runner
 
-class G:
-    module_prefix = 'castiron.builder.'
-    description_attribute_name = 'castiron_description'
-    initialize_attribute_name = 'castiron_initialize'
-    features_attribute_name = 'castiron_features'
-    perform_skipped_label = '(skipped)'
+MODULE_PREFIX    = 'castiron.builder.'
+ATTR_DESCRIPTION = 'description'
+ATTR_ACTIONS     = 'actions'
+ATTR_FEATURES    = 'features'
+LABEL_SKIPPED    = '(skipped)'
 
 class Builder(object):
 
@@ -45,7 +44,7 @@ class Builder(object):
         try:
             self.features_function(**self.features)
         except Exception, e:
-            self.runner.fatal_exception('%s.%s() exception' % builder_module_name, G.features_attribute_name, e)
+            self.runner.fatal_exception('%s.%s() exception' % builder_module_name, ATTR_FEATURES, e)
 
     def initialize(self, runner):
         runner.verbose_info('initialize - %s' % self.description, contexts=[self.name])
@@ -71,7 +70,7 @@ class Builder(object):
                         action_number += 1
                         label = str(action_number)
                     else:
-                        label = G.perform_skipped_label
+                        label = LABEL_SKIPPED
                     runner.info('action %s - %s' % (label, description), contexts=[self.name])
                 if execute and not runner.options.dry_run:
                     action.perform(runner)
@@ -109,8 +108,8 @@ class Supervisor(object):
         imported_builder_names = []
         sequenced_builder_names = []
         def callback(full_name, path):
-            if full_name.startswith(G.module_prefix):
-                builder_name = full_name[len(G.module_prefix):]
+            if full_name.startswith(MODULE_PREFIX):
+                builder_name = full_name[len(MODULE_PREFIX):]
                 if builder_name in self.builder_config:
                     imported_builder_names.append(builder_name)
         with ModuleLoadHooker(callback):
@@ -125,7 +124,7 @@ class Supervisor(object):
                     imported_builder_names = []
         # Create the builder objects
         for builder_name in sequenced_builder_names:
-            builder_module_name = ''.join([G.module_prefix, builder_name])
+            builder_module_name = ''.join([MODULE_PREFIX, builder_name])
             builder_module = sys.modules[builder_module_name]
             if builder_module:
                 missing_attributes = []
@@ -133,9 +132,9 @@ class Supervisor(object):
                     if hasattr(builder_module, name):
                         return getattr(builder_module, name)
                     missing_attributes.append(name)
-                description = get_attribute(G.description_attribute_name)
-                initialize_function = get_attribute(G.initialize_attribute_name)
-                features_function = get_attribute(G.features_attribute_name)
+                description = get_attribute(ATTR_DESCRIPTION)
+                initialize_function = get_attribute(ATTR_ACTIONS)
+                features_function = get_attribute(ATTR_FEATURES)
                 if missing_attributes:
                     self.runner.fatal('Builder module "%s" missing attribute(s): %s'
                                         % (builder_module_name, ' '.join(missing_attributes)))
