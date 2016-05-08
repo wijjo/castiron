@@ -1,6 +1,5 @@
-import castiron
-import castiron.action.filesystem
-import castiron.builder.system
+import CI.action
+import CI.builder.system
 
 import os
 
@@ -17,7 +16,7 @@ def features(copy_standard_config=False, inject_private_config=None, change_user
         G.inject_private_config = os.path.expandvars(os.path.expanduser(inject_private_config))
     G.change_user_shell = change_user_shell
 
-castiron.builder.system.features(packages=['fish'])
+CI.builder.system.features(packages=['fish'])
 
 class FishChangeUserShellAction(object):
     description = "choose Fish as the user shell"
@@ -43,14 +42,9 @@ class FishChangeUserShellAction(object):
 
 def actions(runner):
     if G.copy_standard_config:
-        yield castiron.action.filesystem.CopyFile('/usr/share/fish/config.fish',
-                                                  '~/.config/fish/config.fish',
-                                                  overwrite=False,
-                                                  permissions=None,
-                                                  create_directory=True)
+        yield CI.action.CopyFile('/usr/share/fish/config.fish', '~/.config/fish/config.fish',
+                                 overwrite=False, permissions=None, create_directory=True)
     if G.inject_private_config:
-        yield castiron.action.filesystem.InjectText('~/.bashrc',
-                                                    '#CASTIRON# Private config',
-                                                    ['source %s' % G.inject_private_config])
+        yield CI.action.InjectText('~/.bashrc', '#CI# Private config', ['source %s' % G.inject_private_config])
     if G.change_user_shell:
         yield FishChangeUserShellAction()

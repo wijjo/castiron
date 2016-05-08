@@ -18,7 +18,7 @@ def add_castiron_lib_to_sys_path():
 
 add_castiron_lib_to_sys_path()
 
-import castiron
+from castiron.main import main
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -32,7 +32,7 @@ if __name__ == '__main__':
                         help='display verbose messages')
     args = parser.parse_args()
     try:
-        castiron.main.main(args.config_path, dry_run=args.dry_run, dumb_run=args.dumb_run, verbose=args.verbose)
+        main(args.config_path, dry_run=args.dry_run, dumb_run=args.dumb_run, verbose=args.verbose)
     except KeyboardInterrupt:
         sys.stderr.write('\n<interrupted>\n')
         sys.exit(255)

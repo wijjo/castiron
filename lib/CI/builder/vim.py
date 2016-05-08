@@ -1,12 +1,11 @@
-import castiron
-import castiron.action.filesystem
-import castiron.builder.system
+import CI.action
+import CI.builder.system
 
 import os
 
 description = 'configure Vim user settings'
 
-castiron.builder.system.features(packages=['vim'])
+CI.builder.system.features(packages=['vim'])
 
 class G:
     settings = []
@@ -22,8 +21,8 @@ def features(settings=[], inject_rc=None, backup_directory=None):
 
 def actions(runner):
     if G.backup_directory:
-        yield castiron.action.filesystem.CreateDirectory(G.backup_directory)
+        yield CI.action.CreateDirectory(G.backup_directory)
     if G.settings:
-        yield castiron.action.filesystem.InjectText('~/.vimrc', '"castiron: custom', G.settings)
+        yield CI.action.InjectText('~/.vimrc', '"castiron: custom', G.settings)
     if G.inject_rc:
-        yield castiron.action.filesystem.InjectText('~/.vimrc', '"castiron: private', ['source %s' % G.inject_rc])
+        yield CI.action.InjectText('~/.vimrc', '"castiron: private', ['source %s' % G.inject_rc])

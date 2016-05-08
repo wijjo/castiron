@@ -1,8 +1,7 @@
-import castiron
-import castiron.action.filesystem
-import castiron.builder.system
+import CI.action
+import CI.builder.system
 
-castiron.builder.system.features(packages=['git'])
+CI.builder.system.features(packages=['git'])
 
 description = 'configure Git settings and local repositories'
 
@@ -48,8 +47,8 @@ class GitCloneAction(object):
 def actions(runner):
     if G.gitconfig:
         if G.link_gitconfig:
-            yield castiron.action.filesystem.CreateLink(G.gitconfig, '~/.gitconfig')
+            yield CI.action.CreateLink(G.gitconfig, '~/.gitconfig')
         else:
-            yield castiron.action.filesystem.CopyFile(G.gitconfig, '~/.gitconfig')
+            yield CI.action.CopyFile(G.gitconfig, '~/.gitconfig')
     for repository_url in G.repository_urls:
         yield GitCloneAction(repository_url)

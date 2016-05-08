@@ -2,13 +2,12 @@ import sys
 import os
 import time
 
-import castiron
-import castiron.action.filesystem
+import CI.action
 
 description = 'system settings and packages'
 
 if os.path.exists('/etc/redhat-release'):
-    raise castiron.ActionException('Red Hat/CentOS is not yet supported.')
+    raise CI.ActionException('Red Hat/CentOS is not yet supported.')
 
 #TODO: Support yum, etc..
 
@@ -51,8 +50,8 @@ class SystemPackageAction(object):
     def check(self, runner):
         if G.to_install is None:
             G.to_install = set()
-            runner.verbose_info('Checking installed packages...')
-            for line in castiron.tools.pipe_command('sudo', 'apt-get', '-sqq', 'install', *G.packages):
+            runner.info('Checking installed packages...', verbose=True)
+            for line in runner.pipe('sudo', 'apt-get', '-sqq', 'install', *G.packages):
                 fields = line.split()
                 if len(fields) >= 2 and fields[0] in ('Inst', 'Conf', 'Remv'):
                     G.to_install.add(fields[1])
@@ -70,7 +69,7 @@ def actions(runner):
         yield SystemPackageAction(package)
     if G.inputrc:
         if G.link_inputrc:
-            yield castiron.action.filesystem.CreateLink(G.inputrc, '~/.inputrc')
+            yield CI.action.CreateLink(G.inputrc, '~/.inputrc')
         else:
-            yield castiron.action.filesystem.CopyFile(G.inputrc, '~/.inputrc')
+            yield CI.action.CopyFile(G.inputrc, '~/.inputrc')
 

@@ -2,60 +2,36 @@ import sys
 import os
 import shutil
 import copy
-import traceback
 
-from tools import ChangeDirectory, log_message, quote_arg_str, pipe_command, run_command
+from tools import ChangeDirectory, Logger, quote_arg_str, pipe_command, run_command
 
 class G:
     wrap_width = 100
-
-def _log(stream, tag, message, **kwargs):
-    if 'wrap' in kwargs:
-        kwargs2 = kwargs
-    else:
-        kwargs2 = copy.copy(kwargs)
-        kwargs2['wrap'] = G.wrap_width
-    log_message(stream, message, tag=tag, **kwargs2)
 
 class Runner(object):
 
     def __init__(self, options):
         self.options = options
+        self.info  = Logger(stream=sys.stdout, tag='INFO',  verbose=self.options.verbose)
+        self.error = Logger(stream=sys.stderr, tag='ERROR', verbose=self.options.verbose)
+        self.fatal = Logger(stream=sys.stderr, tag='FATAL', verbose=self.options.verbose, callback=self.abort)
 
     def run(self, *args):
         if self.options.dry_run or self.options.verbose:
-            self.info('Run command: %s' % quote_arg_str(args), wrap=None)
+            self.info('Run command: %s' % quote_arg_str(args), unwrapped=True)
         if self.options.dry_run:
             return
         run_command(*args)
 
     def pipe(self, *args):
         if self.options.dry_run or self.options.verbose:
-            self.info('Pipe command: %s' % quote_arg_str(args), wrap=None)
+            self.info('Pipe command: %s' % quote_arg_str(args), unwrapped=True)
         if self.options.dry_run:
             return
         for line in pipe_command(*args):
             yield line
 
-    def info(self, message, **kwargs):
-        _log(sys.stdout, 'INFO', message, **kwargs)
-
-    def verbose_info(self, message, **kwargs):
-        if self.options.verbose:
-            _log(sys.stdout, 'INFO2', message, **kwargs)
-
-    def error(self, message, **kwargs):
-        _log(sys.stderr, 'ERROR', message, **kwargs)
-
-    def fatal(self, message, **kwargs):
-        _log(sys.stderr, 'FATAL', message, **kwargs)
-        sys.exit(255)
-
-    def fatal_exception(self, message, exception, **kwargs):
-        _log(sys.stderr, 'FATAL', message, **kwargs)
-        _log(sys.stderr, 'FATAL', 'Exception[%s]: %s' % (exception.__class__.__name__, str(exception)))
-        if self.options.verbose:
-            traceback.print_exc()
+    def abort(self):
         sys.exit(255)
 
     def create_directory(self, path, permissions=None):

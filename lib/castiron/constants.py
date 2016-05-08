@@ -1,0 +1,5 @@
+BUILDER_PREFIX   = 'CI.builder'
+ATTR_DESCRIPTION = 'description'
+ATTR_ACTIONS     = 'actions'
+ATTR_FEATURES    = 'features'
+LABEL_SKIPPED    = '(skipped)'

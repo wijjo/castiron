@@ -1,7 +1,6 @@
-import castiron
-import castiron.builder.system
+import CI.builder.system
 
-castiron.builder.system.features(
+CI.builder.system.features(
     packages=[
         'python-pip',
         'python-dev',
@@ -23,7 +22,7 @@ class PythonPackageAction(object):
         self.package = package
 
     def check(self, runner):
-        for line in castiron.tools.pipe_command('pip', 'show', self.package):
+        for line in runner.pipe('pip', 'show', self.package):
             if line.startswith('Version:'):
                 return True
         return False

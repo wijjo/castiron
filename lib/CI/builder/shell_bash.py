@@ -1,8 +1,7 @@
-import castiron
-import castiron.action.filesystem
-import castiron.builder.system
+import CI.action
+import CI.builder.system
 
-castiron.builder.system.features(packages=['bash-completion'])
+CI.builder.system.features(packages=['bash-completion'])
 
 description = 'configure Bash user settings'
 
@@ -20,7 +19,7 @@ def features(inject_rc=None, inject_profile=None):
 
 def actions(runner):
     if G.inject_rc:
-        yield castiron.action.filesystem.InjectText('~/.bashrc', '#CASTIRON# inject', ['source %s' % G.inject_rc])
+        yield CI.action.InjectText('~/.bashrc', '#CASTIRON# inject', ['source %s' % G.inject_rc])
     if G.inject_profile:
-        yield castiron.action.filesystem.InjectText('~/.bash_profile', '#CASTIRON# inject', ['source %s' % G.inject_profile])
+        yield CI.action.InjectText('~/.bash_profile', '#CASTIRON# inject', ['source %s' % G.inject_profile])
 

@@ -1,5 +1,4 @@
-import castiron
-import castiron.builder.system
+import CI.builder.system
 
 import sys
 
@@ -22,7 +21,7 @@ def features(bundles=[]):
     unknown_bundles = []
     for bundle in bundles:
         if bundle in G.bundles:
-            castiron.builder.system.features(packages=G.bundles[bundle])
+            CI.builder.system.features(packages=G.bundles[bundle])
         else:
             unknown_bundles.extend(bundle)
     if unknown_bundles:

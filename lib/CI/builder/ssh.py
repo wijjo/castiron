@@ -1,5 +1,4 @@
-import castiron
-import castiron.action.filesystem
+import CI.action
 
 import os
 
@@ -67,11 +66,13 @@ class AuthorizeKeyAction(object):
     def __init__(self, authorized_key):
         self.authorized_key = authorized_key
         self.authorized_keys_path = os.path.expanduser('~/.ssh/authorized_keys')
+        self.injector = CI.action.InjectText(self.authorized_keys_path, self.authorized_key,
+                                             [self.authorized_key], permissions=0600)
 
     def check(self, runner):
         if self.authorized_key == G.prompt_for_key_string:
             return True
-        return not castiron.action.filesystem.file_has_line(runner, self.authorized_keys_path, self.authorized_key)
+        return self.injector.check(runner)
 
     def perform(self, runner):
         if self.authorized_key == G.prompt_for_key_string:
@@ -81,10 +82,10 @@ class AuthorizeKeyAction(object):
         if not public_key:
             runner.info('No RSA public key provided - skipping.')
             return
-        castiron.action.filesystem.inject_text(runner, self.authorized_keys_path, [self.authorized_key], permissions=0600)
+        self.injector.perform(runner)
 
 def actions(runner):
-    yield castiron.action.filesystem.CreateDirectory('~/.ssh', permissions=0700)
+    yield CI.action.CreateDirectory('~/.ssh', permissions=0700)
     if G.generate_keys:
         yield GenerateKeysAction(
             G.private_key_path,

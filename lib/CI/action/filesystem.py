@@ -1,24 +1,5 @@
 import os
 
-def file_has_line(runner, path, marker):
-    real_path = os.path.realpath(os.path.expanduser(path))
-    if os.path.exists(real_path):
-        with open(real_path) as f:
-            for line in f:
-                if line.find(marker) >= 0:
-                    return True
-    return False
-
-def inject_text(runner, path, text, permissions=None):
-    real_path = os.path.realpath(os.path.expanduser(path))
-    with open(real_path, 'a' if os.path.exists(real_path) else 'w') as f:
-        f.write('\n')
-        f.write(text)
-        if not text.endswith('\n'):
-            f.write('\n')
-    if permissions is not None:
-        os.chmod(real_path, permissions)
-
 class OpBase(object):
     def __init__(self, path, description):
         self.path = os.path.expanduser(os.path.expandvars(path))
@@ -42,10 +23,24 @@ class InjectText(OpBase):
         super(InjectText, self).__init__(path, 'inject text into file: %s' % path)
 
     def check(self, runner):
-        return file_has_line(runner, self.path, self.marker)
+        real_path = os.path.realpath(os.path.expanduser(self.path))
+        if os.path.exists(real_path):
+            with open(real_path) as f:
+                for line in f:
+                    if line.find(self.marker) >= 0:
+                        return False
+        return True
 
     def perform(self, runner):
-        inject_text(runner, self.path, '\n'.join(self.lines), permissions=self.permissions)
+        text = '\n'.join(self.lines)
+        real_path = os.path.realpath(os.path.expanduser(self.path))
+        with open(real_path, 'a' if os.path.exists(real_path) else 'w') as f:
+            f.write('\n')
+            f.write(text)
+            if not text.endswith('\n'):
+                f.write('\n')
+        if self.permissions is not None:
+            os.chmod(real_path, self.permissions)
 
 class CopyFile(OpBase):
 
