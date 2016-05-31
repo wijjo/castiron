@@ -1,7 +1,7 @@
 import sys
 
-from tools import ModuleLoadHooker, ActionException
-from builder import Builder
+from castiron.tools import ModuleLoadHooker, ActionException
+from castiron.builder import Builder
 from castiron import constants
 
 class Supervisor(object):
@@ -21,38 +21,36 @@ class Supervisor(object):
                     imported_builder_names.append(builder_name)
         with ModuleLoadHooker(callback):
             for builder_name in self.builder_config:
-                builder_module_name = '.'.join([constants.BUILDER_PREFIX, builder_name])
-                self.runner.info('Import builder: %s' % builder_module_name, verbose=True)
-                import_builder(self.runner, builder_module_name)
+                mod_name = '.'.join([constants.BUILDER_PREFIX, builder_name])
+                self.runner.info('Import builder: %s' % mod_name, verbose=True)
+                import_builder(self.runner, mod_name)
                 if imported_builder_names:
                     # Reverse the modules imported due to dependencies so that they
                     # get invoked before the dependent modules.
                     sequenced_builder_names.extend(reversed(imported_builder_names))
                     imported_builder_names = []
-        # Create the builder objects
         for builder_name in sequenced_builder_names:
-            builder_module_name = '.'.join([constants.BUILDER_PREFIX, builder_name])
-            builder_module = sys.modules[builder_module_name]
-            if builder_module:
-                missing_attributes = []
-                def get_attribute(name):
-                    if hasattr(builder_module, name):
-                        return getattr(builder_module, name)
-                    missing_attributes.append(name)
-                description = get_attribute(constants.ATTR_DESCRIPTION)
-                initialize_function = get_attribute(constants.ATTR_ACTIONS)
-                features_function = get_attribute(constants.ATTR_FEATURES)
-                if missing_attributes:
-                    self.runner.fatal('Builder module "%s" missing attribute(s): %s'
-                                        % (builder_module_name, ' '.join(missing_attributes)))
-                self.builders.append(
-                        Builder(builder_name,
-                                builder_module_name,
-                                builder_module,
-                                description,
-                                self.builder_config[builder_name],
-                                initialize_function,
-                                features_function))
+            self.add_builder(builder_name)
+
+    def add_builder(self, name):
+        mod_name = '.'.join([constants.BUILDER_PREFIX, name])
+        if mod_name not in sys.modules:
+            return None
+        module = sys.modules[mod_name]
+        config = self.builder_config[name]
+        missing_attributes = []
+        def get_attribute(name):
+            if hasattr(module, name):
+                return getattr(module, name)
+            missing_attributes.append(name)
+        mod_desc = get_attribute(constants.ATTR_DESCRIPTION)
+        mod_actions = get_attribute(constants.ATTR_ACTIONS)
+        mod_features = get_attribute(constants.ATTR_FEATURES)
+        if missing_attributes:
+            smissing = ' '.join(missing_attributes)
+            self.runner.fatal('Builder "%s" is missing attribute(s): %s' % (mod_name, smissing))
+        self.builders.append(
+            Builder(name, module, config, mod_name, mod_desc, mod_actions, mod_features))
 
     def configure(self):
         self.runner.info('===== Configuring builder features ...')
@@ -81,8 +79,8 @@ class Supervisor(object):
             sys.stderr.write('Action error: %s\n' % str(e))
             sys.exit(255)
 
-def import_builder(runner, builder_module_name):
+def import_builder(runner, mod_name):
     try:
-        exec 'import %s' % builder_module_name
+        exec 'import %s' % mod_name
     except ImportError, e:
-        runner.fatal('Builder import failed: %s' % builder_module_name, exception=e)
+        runner.fatal('Builder import failed: %s' % mod_name, exception=e)

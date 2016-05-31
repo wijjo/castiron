@@ -12,9 +12,19 @@ class Runner(object):
 
     def __init__(self, options):
         self.options = options
-        self.info  = Logger(stream=sys.stdout, tag='INFO',  verbose=self.options.verbose)
-        self.error = Logger(stream=sys.stderr, tag='ERROR', verbose=self.options.verbose)
-        self.fatal = Logger(stream=sys.stderr, tag='FATAL', verbose=self.options.verbose, callback=self.abort)
+        self.info  = Logger(stream=sys.stdout,
+                            tag='INFO',
+                            verbose=self.options.verbose,
+                            debug=self.options.debug)
+        self.error = Logger(stream=sys.stderr,
+                            tag='ERROR',
+                            verbose=self.options.verbose,
+                            debug=self.options.debug)
+        self.fatal = Logger(stream=sys.stderr,
+                            tag='FATAL',
+                            verbose=self.options.verbose,
+                            debug=self.options.debug,
+                            callback=self.abort)
 
     def run(self, *args):
         if self.options.dry_run or self.options.verbose:

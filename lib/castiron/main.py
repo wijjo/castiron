@@ -1,3 +1,4 @@
+import sys
 import yaml
 
 from castiron.runner import Runner
@@ -11,8 +12,13 @@ def load_configuration(runner, config_path):
     except Exception, e:
         runner.fatal('Failed to load configuration: %s' % config_path, exception=e)
 
-def main(config_path, dry_run=False, dumb_run=False, verbose=False):
-    options = Options(dry_run=dry_run, dumb_run=dumb_run, verbose=verbose)
+def main(config_path, args):
+    options = Options(dry_run=args.dry_run,
+                      unoptimized=args.unoptimized,
+                      verbose=args.verbose,
+                      debug=args.debug)
+    if options.debug:
+        sys.setrecursionlimit(50)
     runner = Runner(options)
     builder_config = load_configuration(runner, config_path)
     supervisor = Supervisor(runner, builder_config)

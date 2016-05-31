@@ -26,13 +26,15 @@ if __name__ == '__main__':
     parser.add_argument('config_path', type=str, help='.castiron configuration file path')
     parser.add_argument('-n', '--dry-run', action='store_true', dest='dry_run',
                         help='display actions without executing them')
-    parser.add_argument('-d', '--dumb-run', action='store_true', dest='dumb_run',
+    parser.add_argument('-u', '--unoptimized', action='store_true', dest='unoptimized',
                         help='run actions without optimizing for system state')
     parser.add_argument('-v', '--verbose', action='store_true', dest='verbose',
                         help='display verbose messages')
+    parser.add_argument('-d', '--debug', action='store_true', dest='debug',
+                        help='provide debug diagnostics')
     args = parser.parse_args()
     try:
-        main(args.config_path, dry_run=args.dry_run, dumb_run=args.dumb_run, verbose=args.verbose)
+        main(args.config_path, args)
     except KeyboardInterrupt:
         sys.stderr.write('\n<interrupted>\n')
         sys.exit(255)

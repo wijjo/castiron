@@ -17,11 +17,12 @@ class Logger(object):
             self.stream.write(s)
             self.stream.write(os.linesep)
 
-    def __init__(self, stream=None, tag=None, wrap=None, verbose=False, callback=None):
+    def __init__(self, stream=None, tag=None, wrap=None, verbose=False, debug=False, callback=None):
         self.stream = stream if stream else sys.stdout
         self.tag = tag if tag else ''
         self.wrap = wrap
         self.verbose = verbose
+        self.debug = debug
         self.callback = callback
 
     def __call__(self, message, contexts=None, exception=None, verbose=False, unwrapped=False):
@@ -31,10 +32,6 @@ class Logger(object):
                            ' [%s]' % ' '.join(contexts) if contexts else '',
                            ': ' if self.tag or contexts else ''])
         write_line = Logger.Writer(self.stream, preamble)
-        if exception:
-            write_line('Exception[%s]: %s' % (exception.__class__.__name__, str(exception)))
-            if self.verbose:
-                traceback.print_exc()
         if unwrapped or self.wrap is None:
             write_line(message)
         else:
@@ -43,6 +40,10 @@ class Logger(object):
                                       break_on_hyphens=False,
                                       break_long_words=False):
                 write_line(line)
+        if exception:
+            write_line('Exception(%s): %s' % (exception.__class__.__name__, str(exception)))
+            if self.debug:
+                traceback.print_exc()
         if self.callback:
             self.callback()
 
