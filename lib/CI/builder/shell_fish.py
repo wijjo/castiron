@@ -1,22 +1,18 @@
-import CI.action
+import CI
 import CI.builder.system
 
 import os
 
 description = 'configure the Fish shell'
 
-class G:
-    copy_standard_config = False
-    inject_private_config = None
-    change_user_shell = False
+features = CI.Features(
+    copy_standard_config  = CI.Boolean(),
+    change_user_shell     = CI.Boolean(),
+)
 
-def features(copy_standard_config=False, inject_private_config=None, change_user_shell=False):
-    G.copy_standard_config = copy_standard_config
-    if inject_private_config:
-        G.inject_private_config = os.path.expandvars(os.path.expanduser(inject_private_config))
-    G.change_user_shell = change_user_shell
-
-CI.builder.system.features(packages=['fish'])
+CI.builder.system.features.packages = [
+    'fish',
+]
 
 class FishChangeUserShellAction(object):
     description = "choose Fish as the user shell"
@@ -41,10 +37,8 @@ class FishChangeUserShellAction(object):
             runner.run('sudo', 'chsh', '-s', self.fish_path, os.getlogin())
 
 def actions(runner):
-    if G.copy_standard_config:
+    if features.copy_standard_config:
         yield CI.action.CopyFile('/usr/share/fish/config.fish', '~/.config/fish/config.fish',
                                  overwrite=False, permissions=None, create_directory=True)
-    if G.inject_private_config:
-        yield CI.action.InjectText('~/.bashrc', '#CI# Private config', ['source %s' % G.inject_private_config])
-    if G.change_user_shell:
+    if features.change_user_shell:
         yield FishChangeUserShellAction()

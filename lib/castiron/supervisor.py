@@ -43,38 +43,45 @@ class Supervisor(object):
             if hasattr(module, name):
                 return getattr(module, name)
             missing_attributes.append(name)
-        mod_desc = get_attribute(constants.ATTR_DESCRIPTION)
-        mod_actions = get_attribute(constants.ATTR_ACTIONS)
-        mod_features = get_attribute(constants.ATTR_FEATURES)
+        mod_desc = get_attribute(constants.ATTR_DESC)
+        mod_feat = get_attribute(constants.ATTR_FEAT)
+        mod_dep  = get_attribute(constants.ATTR_DEP)
+        mod_act  = get_attribute(constants.ATTR_ACT)
         if missing_attributes:
             smissing = ' '.join(missing_attributes)
             self.runner.fatal('Builder "%s" is missing attribute(s): %s' % (mod_name, smissing))
         self.builders.append(
-            Builder(name, module, config, mod_name, mod_desc, mod_actions, mod_features))
+            Builder(name, module, config, mod_name, mod_desc, mod_feat, mod_dep, mod_act))
 
-    def configure(self):
-        self.runner.info('===== Configuring builder features ...')
+    def prepare_features(self):
+        self.runner.info('===== Preparing builder features ...')
         for builder in self.builders:
-            builder.configure(self.runner)
+            builder.prepare_features(self.runner)
 
-    def initialize(self):
-        self.runner.info('===== Initializing builders ...')
-        # Initialize the builders.
+    def prepare_dependencies(self):
+        self.runner.info('===== Preparing builder dependencies ...')
         for builder in self.builders:
-            builder.initialize(self.runner)
+            builder.prepare_dependencies(self.runner)
 
-    def perform(self):
+    def prepare_actions(self):
+        self.runner.info('===== Preparing builder actions ...')
+        for builder in self.builders:
+            builder.prepare_actions(self.runner)
+
+    def perform_actions(self):
         # Perform the actions (for dry or normal run).
-        self.runner.info('===== Performing builder actions%s ...' % ' (dry run)' if self.runner.options.dry_run else '')
+        self.runner.info('===== Performing builder actions%s ...'
+                            % ' (dry run)' if self.runner.options.dry_run else '')
         for builder in self.builders:
-            builder.perform(self.runner)
+            builder.perform_actions(self.runner)
 
     def run(self):
         self.load()
-        self.configure()
+        self.prepare_features()
         try:
-            self.initialize()
-            self.perform()
+            self.initialize_builders()
+            self.prepare_actions()
+            self.perform_actions()
         except ActionException, e:
             sys.stderr.write('Action error: %s\n' % str(e))
             sys.exit(255)

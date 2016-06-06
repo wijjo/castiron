@@ -1,36 +1,22 @@
-import CI.action
+import CI
 
 import os
 
 description = 'initialize SSH user configuration'
 
-class G:
-    generate_keys = None
-    private_key_path = None
-    private_key_type = None
-    show_public_key = None
-    show_public_key_comment = None
-    show_public_key_pause = None
-    authorized_keys = None
-    prompt_for_key_string = 'prompt'
+features = CI.Features(
+    generate_keys           = CI.Boolean(),
+    private_key_path        = CI.File('~/.ssh/id_rsa'),
+    private_key_type        = CI.String(default='rsa'),
+    show_public_key         = CI.Boolean(),
+    show_public_key_comment = CI.String(),
+    show_public_key_pause   = CI.Boolean(),
+    authorized_keys         = CI.List(CI.String(),
+)
 
-def features(
-        generate_keys=False,
-        private_key_path='~/.ssh/id_rsa',
-        private_key_type='rsa',
-        show_public_key=False,
-        show_public_key_comment=None,
-        show_public_key_pause=False,
-        # Actual public key strings and or prompt_for_key_string for prompted input.
-        authorized_keys=[]
-    ):
-    G.generate_keys = generate_keys
-    G.private_key_path = os.path.expandvars(os.path.expanduser('~/.ssh/id_rsa'))
-    G.private_key_type = private_key_type
-    G.show_public_key = show_public_key
-    G.show_public_key_comment = show_public_key_comment
-    G.show_public_key_pause = show_public_key_pause
-    G.authorized_keys = authorized_keys
+class G:
+    # When specified for authorized_keys item prompts the user for the key.
+    prompt_for_key_string = 'prompt'
 
 class GenerateKeysAction(object):
 
@@ -86,12 +72,12 @@ class AuthorizeKeyAction(object):
 
 def actions(runner):
     yield CI.action.CreateDirectory('~/.ssh', permissions=0700)
-    if G.generate_keys:
+    if features.generate_keys:
         yield GenerateKeysAction(
-            G.private_key_path,
-            G.show_public_key,
-            G.show_public_key_comment,
-            G.show_public_key_pause
+            features.private_key_path,
+            features.show_public_key,
+            features.show_public_key_comment,
+            features.show_public_key_pause
         )
-    for authorized_key in G.authorized_keys:
+    for authorized_key in features.authorized_keys:
         yield AuthorizeKeyAction(authorized_key)

@@ -1,20 +1,16 @@
 import CI.builder.system
 
-CI.builder.system.features(
-    packages=[
-        'python-pip',
-        'python-dev',
-        'ipython',
-    ]
-)
-
 description = 'Python settings and packages'
 
-class G:
-    packages = []
+features = CI.Features(
+    packages = CI.List(CI.String()),
+)
 
-def features(packages=[]):
-    G.packages.extend(packages)
+CI.builder.system.features.packages = [
+    'python-pip',
+    'python-dev',
+    'ipython',
+]
 
 class PythonPackageAction(object):
 
@@ -34,5 +30,5 @@ class PythonPackageAction(object):
         return 'install Python package: %s' % self.package
 
 def actions(runner):
-    for package in G.packages:
+    for package in features.packages:
         yield PythonPackageAction(package)

@@ -1,11 +1,13 @@
 import CI.builder.system
 
-import sys
-
 description = 'install software bundles'
 
+features = CI.Features(
+    bundles = CI.List(CI.String()),
+)
+
 class G:
-    bundles = {
+    available_bundles = {
         'fast_search'          : ['silversearcher-ag'],
         'fast_compression'     : ['pbzip2', 'pigz', 'pixz', 'pxz'],
         'other_compression'    : ['zip', 'unzip', 'p7zip'],
@@ -17,15 +19,18 @@ class G:
         'software_development' : ['build-essential', 'ctags'],
     }
 
-def features(bundles=[]):
+def dependencies(runner):
     unknown_bundles = []
-    for bundle in bundles:
-        if bundle in G.bundles:
-            CI.builder.system.features(packages=G.bundles[bundle])
+    packages = []
+    for bundle in features.bundles:
+        if bundle in G.available_bundles:
+            packages.extend(G.available_bundles[bundle])
         else:
             unknown_bundles.extend(bundle)
     if unknown_bundles:
-        sys.stderr.write('Unknown bundle(s): %s' % ' '.join(unknown_bundles))
+        runner.error('Unknown bundle(s): %s' % ' '.join(unknown_bundles))
+    if packages:
+        CI.builder.system.features.packages = packages
 
 def actions(runner):
     pass

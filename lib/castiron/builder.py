@@ -4,30 +4,32 @@ from castiron import constants
 
 class Builder(object):
 
-    def __init__(self, name, module, config, mod_name, mod_desc, mod_actions, mod_features):
-        self.name = name
-        self.module = module
-        self.config = config
+    def __init__(self, name, module, config, mod_name, mod_desc, mod_feat, mod_dep, mod_act):
+        self.name     = name
+        self.module   = module
+        self.config   = config
         self.mod_name = mod_name
         self.mod_desc = mod_desc
-        self.mod_actions = mod_actions
-        self.mod_features = mod_features
-        self.actions = None
+        self.mod_feat = mod_feat
+        self.mod_dep  = mod_dep
+        self.mod_act  = mod_act
+        self.actions  = None
 
-    def configure(self, runner):
-        runner.info('configure - %s' % self.mod_desc, contexts=[self.name], verbose=True)
-        if inspect.isfunction(self.mod_features):
-            self.configure_features_function(runner)
+    def prepare_features(self, runner):
+        runner.info('prepare features - %s' % self.mod_desc, contexts=[self.name], verbose=True)
+        if inspect.isfunction(self.mod_feat):
+            self._prepare_features_function(runner)
         else:
             try:
-                self.mod_features.update(**self.config)
+                self.mod_feat.update(**self.config)
             except Exception, e:
-                runner.fatal('%s.%s error' % (self.mod_name, constants.ATTR_FEATURES),
+                runner.fatal('%s.%s error' % (self.mod_name, constants.ATTR_FEAT),
                                   exception=e)
 
-    def configure_features_function(self, runner):
+    def _prepare_features_function(self, runner):
+        #TODO drop this
         feature_dict = {}
-        arg_spec = inspect.getargspec(self.mod_features)
+        arg_spec = inspect.getargspec(self.mod_feat)
         for argi in range(len(arg_spec.args)):
             feature_dict[arg_spec.args[argi]] = arg_spec.defaults[argi]
         unknown_features = []
@@ -38,22 +40,31 @@ class Builder(object):
             feature_list = ' '.join(sorted(unknown_features))
             self.runner.fatal('Unknown %s config: %s' % (self.mod_name, feature_list))
         try:
-            self.mod_features(**self.config)
+            self.mod_feat(**self.config)
         except Exception, e:
-            self.runner.fatal('%s.%s() error' % (self.mod_name, constants.ATTR_FEATURES),
+            self.runner.fatal('%s.%s() error' % (self.mod_name, constants.ATTR_FEAT),
                               exception=e)
 
-    def initialize(self, runner):
-        runner.info('initialize - %s' % self.mod_desc, contexts=[self.name], verbose=True)
+    def prepare_dependencies(self, runner):
+        if self.mod_dep:
+            if not callable(self.mod_dep):
+                runner.fatal('%s.%s is not callable' % (self.name, constants.ATTR_DEP))
+            try:
+                self.mod_dep(runner)
+            except Exception, e:
+                runner.fatal('%s.%s() error' % (self.name, constants.ATTR_DEP), exception=e)
+
+    def prepare_actions(self, runner):
+        runner.info('prepare actions - %s' % self.mod_desc, contexts=[self.name], verbose=True)
         try:
-            action_generator = self.mod_actions(runner)
+            action_generator = self.mod_act(runner)
             if action_generator:
                 self.actions = [action for action in action_generator if action]
         except Exception, e:
-            runner.fatal('%s.%s() error' % (self.name, constants.ATTR_ACTIONS), exception=e)
+            runner.fatal('%s.%s() error' % (self.name, constants.ATTR_ACT), exception=e)
 
-    def perform(self, runner):
-        runner.info('perform - %s' % self.mod_desc, contexts=[self.name], verbose=True)
+    def perform_actions(self, runner):
+        runner.info('perform actions - %s' % self.mod_desc, contexts=[self.name], verbose=True)
         num_actions = len(self.actions) if self.actions else 0
         mod_desc = self.mod_desc if self.mod_desc else '(no description)'
         if self.actions:
@@ -77,4 +88,4 @@ class Builder(object):
                         label = constants.LABEL_SKIPPED
                     runner.info('action %s - %s' % (label, action_desc), contexts=[self.name])
                 if will_run and not runner.options.dry_run:
-                    action.perform(runner)
+                    action.perform_actions(runner)

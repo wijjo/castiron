@@ -1,18 +1,20 @@
 import CI
 import CI.builder.system
 
-CI.builder.system.features(packages=['git'])
-
 description = 'configure Git settings and local repositories'
 
-import os
-
 features = CI.Features(
-    base_directory = CI.Directory(default='~/git'),
+    base_directory  = CI.Directory(default = '~/git'),
     repository_urls = CI.List(CI.URL()),
-    gitconfig = CI.File(),
-    link_gitconfig = CI.Boolean(),
+    gitconfig       = CI.File(),
+    link_gitconfig  = CI.Boolean(),
 )
+
+CI.builder.system.features.packages = [
+    'git',
+]
+
+import os
 
 class GitCloneAction(object):
 

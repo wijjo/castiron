@@ -2,9 +2,15 @@ import sys
 import os
 import time
 
-import CI.action
+import CI
 
 description = 'system settings and packages'
+
+features = CI.Features(
+    packages     = CI.List(CI.String()),
+    inputrc      = CI.File(),
+    link_inputrc = CI.Boolean(),
+)
 
 if os.path.exists('/etc/redhat-release'):
     raise CI.ActionException('Red Hat/CentOS is not yet supported.')
@@ -16,16 +22,7 @@ class G:
     # Minimum number of seconds between apt updates.
     update_interval_secs = 7200
     path_for_timestamp = '/var/cache/apt'
-    packages = []
-    inputrc = None
-    link_inputrc = False
     to_install = None
-
-def features(packages=[], inputrc=None, link_inputrc=False):
-    G.packages.extend(packages)
-    if inputrc:
-        G.inputrc = os.path.expandvars(os.path.expanduser(inputrc))
-    G.link_inputrc = link_inputrc
 
 class SystemUpgradeAction(object):
 
@@ -51,7 +48,7 @@ class SystemPackageAction(object):
         if G.to_install is None:
             G.to_install = set()
             runner.info('Checking installed packages...', verbose=True)
-            for line in runner.pipe('sudo', 'apt-get', '-sqq', 'install', *G.packages):
+            for line in runner.pipe('sudo', 'apt-get', '-sqq', 'install', *features.packages):
                 fields = line.split()
                 if len(fields) >= 2 and fields[0] in ('Inst', 'Conf', 'Remv'):
                     G.to_install.add(fields[1])
@@ -65,11 +62,11 @@ class SystemPackageAction(object):
 
 def actions(runner):
     yield SystemUpgradeAction()
-    for package in G.packages:
+    for package in features.packages:
         yield SystemPackageAction(package)
-    if G.inputrc:
-        if G.link_inputrc:
-            yield CI.action.CreateLink(G.inputrc, '~/.inputrc')
+    if features.inputrc:
+        if features.link_inputrc:
+            yield CI.action.CreateLink(features.inputrc, '~/.inputrc')
         else:
-            yield CI.action.CopyFile(G.inputrc, '~/.inputrc')
+            yield CI.action.CopyFile(features.inputrc, '~/.inputrc')
 
